@@ -18,6 +18,10 @@ export class Plane {
 
     this._targetPitchRate = 0;
     this._targetRoll = 0;
+
+    this.hp = PLAYER.HP;
+    this.alive = true;
+    this.damageFlash = 0;
   }
 
   update(dt, joystick) {
@@ -58,5 +62,7 @@ export class Plane {
     this.forward.x = fx;
     this.forward.y = fy;
     this.forward.z = fz;
+
+    this.damageFlash = Math.max(0, this.damageFlash - dt * 3);
   }
 }

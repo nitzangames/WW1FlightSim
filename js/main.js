@@ -7,6 +7,7 @@ import { buildFokker, buildCockpit } from './models.js';
 import { drawHud } from './hud.js';
 import { Spawner } from './enemy-spawner.js';
 import { Guns } from './weapons.js';
+import { GameState, STATE } from './game.js';
 
 const gameCanvas = document.getElementById('game-canvas');
 const overlayCanvas = document.getElementById('overlay-canvas');
@@ -32,8 +33,10 @@ scene.add(planeMesh);
 
 const enemies = [];
 const spawner = new Spawner(scene);
-let kills = 0;
 const guns = new Guns(scene);
+
+const gs = new GameState();
+gs.startRun(); // Task 19 will introduce the actual menu flow
 
 // Joystick + input
 const joystick = new Joystick();
@@ -74,34 +77,36 @@ function loop(t) {
   const dt = Math.min(0.05, (t - last) / 1000);
   last = t;
 
-  joystick.tick(dt);
-  plane.update(dt, joystick.value());
-  syncCameraToPlane();
-  for (const e of enemies) e.update(dt, plane);
-  spawner.removeDead(enemies);
-  spawner.maybeSpawn(enemies, plane, kills);
-  const gunState = guns.update(dt, plane, enemies);
-  for (const e of enemies) {
-    if (e.alive && e.hp <= 0) {
-      e.alive = false;
-      kills++;
+  if (gs.state === STATE.PLAYING) {
+    joystick.tick(dt);
+    plane.update(dt, joystick.value());
+    syncCameraToPlane();
+    for (const e of enemies) e.update(dt, plane);
+    spawner.removeDead(enemies);
+    spawner.maybeSpawn(enemies, plane, gs.kills);
+    const gunState = guns.update(dt, plane, enemies);
+    for (const e of enemies) {
+      if (e.alive && e.hp <= 0) {
+        e.alive = false;
+        gs.kills++;
+      }
     }
+    if (plane.hp <= 0 && plane.alive) {
+      plane.alive = false;
+      gs.die();
+    }
+    drawHud(octx, {
+      locked: !!gunState.target,
+      joystick: { active: joystick.active, ax: joystick.ax, ay: joystick.ay, x: joystick.x, y: joystick.y, radius: joystick.radius },
+    });
+  } else {
+    drawHud(octx, {
+      locked: false,
+      joystick: { active: joystick.active, ax: joystick.ax, ay: joystick.ay, x: joystick.x, y: joystick.y, radius: joystick.radius },
+    });
   }
 
   renderer.render(scene, camera);
-
-  drawHud(octx, {
-    locked: !!gunState.target,
-    joystick: {
-      active: joystick.active,
-      ax: joystick.ax,
-      ay: joystick.ay,
-      x: joystick.x,
-      y: joystick.y,
-      radius: joystick.radius,
-    },
-  });
-
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);

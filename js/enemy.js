@@ -50,6 +50,24 @@ export class Enemy {
     this.forward.y = fy;
     this.forward.z = fz;
 
+    // Fire at player if in-cone + in range
+    const px = player.position.x - this.position.x;
+    const py = player.position.y - this.position.y;
+    const pz = player.position.z - this.position.z;
+    const dToPlayer = Math.hypot(px, py, pz);
+    if (dToPlayer > 0.01) {
+      const dot = (px * this.forward.x + py * this.forward.y + pz * this.forward.z) / dToPlayer;
+      const ang = Math.acos(Math.min(1, Math.max(-1, dot)));
+      const FIRE_CONE = ENEMY.FIRE_CONE_DEG * Math.PI / 180;
+      this.firing = (dToPlayer < ENEMY.FIRE_RANGE && ang < FIRE_CONE && dot > 0);
+      if (this.firing && player.alive) {
+        player.hp -= ENEMY.DPS * dt;
+        player.damageFlash = Math.min(1, (player.damageFlash || 0) + ENEMY.DPS * dt / 20);
+      }
+    } else {
+      this.firing = false;
+    }
+
     this.syncMesh();
   }
 
