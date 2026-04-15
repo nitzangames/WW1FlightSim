@@ -70,7 +70,64 @@ export function buildCockpit() {
   cross2.position.set(0, 0.31, -0.9);
   group.add(cross2);
 
+  const flashMat = new THREE.SpriteMaterial({
+    color: 0xffe080, transparent: true, opacity: 0.0, fog: false,
+  });
+  const flash = new THREE.Sprite(flashMat);
+  flash.scale.set(0.5, 0.5, 0.5);
+  flash.position.set(0, -0.18, -1.1);
+  flash.name = 'muzzle-flash';
+  group.add(flash);
+  group.userData.flash = flash;
+
   return group;
+}
+
+export function createSmokePool(scene, size = 120) {
+  const tex = new THREE.CanvasTexture(makeSmokeCanvas());
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.7, depthWrite: false });
+  const pool = [];
+  for (let i = 0; i < size; i++) {
+    const s = new THREE.Sprite(mat.clone());
+    s.visible = false;
+    s.scale.set(3, 3, 3);
+    scene.add(s);
+    pool.push({ sprite: s, life: 0, maxLife: 1 });
+  }
+  return pool;
+}
+
+function makeSmokeCanvas() {
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 64;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(32, 32, 4, 32, 32, 32);
+  grad.addColorStop(0, 'rgba(180,180,180,0.9)');
+  grad.addColorStop(1, 'rgba(180,180,180,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  return c;
+}
+
+export function emitSmoke(pool, x, y, z, maxLife = 1.0) {
+  const slot = pool.find(s => !s.sprite.visible);
+  if (!slot) return;
+  slot.sprite.visible = true;
+  slot.sprite.position.set(x, y, z);
+  slot.sprite.material.opacity = 0.7;
+  slot.life = maxLife;
+  slot.maxLife = maxLife;
+}
+
+export function updateSmoke(pool, dt) {
+  for (const s of pool) {
+    if (!s.sprite.visible) continue;
+    s.life -= dt;
+    s.sprite.material.opacity = Math.max(0, 0.7 * s.life / s.maxLife);
+    const grow = 1 + (1 - s.life / s.maxLife) * 2;
+    s.sprite.scale.set(3 * grow, 3 * grow, 3 * grow);
+    if (s.life <= 0) s.sprite.visible = false;
+  }
 }
 
 export function buildBiplane() {

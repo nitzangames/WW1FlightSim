@@ -3,7 +3,7 @@ import { createRenderer } from './renderer.js';
 import { buildWorld } from './world.js';
 import { Joystick } from './input.js';
 import { Plane } from './plane.js';
-import { buildFokker, buildCockpit } from './models.js';
+import { buildFokker, buildCockpit, createSmokePool, emitSmoke, updateSmoke } from './models.js';
 import { drawHud } from './hud.js';
 import { Spawner } from './enemy-spawner.js';
 import { Guns } from './weapons.js';
@@ -34,6 +34,9 @@ scene.add(planeMesh);
 const enemies = [];
 const spawner = new Spawner(scene);
 const guns = new Guns(scene);
+
+const smokePool = createSmokePool(scene);
+let smokeTimer = 0;
 
 const gs = new GameState();
 gs.startRun(); // Task 19 will introduce the actual menu flow
@@ -77,6 +80,8 @@ function loop(t) {
   const dt = Math.min(0.05, (t - last) / 1000);
   last = t;
 
+  updateSmoke(smokePool, dt);
+
   let gunState = null;
   if (gs.state === STATE.PLAYING) {
     joystick.tick(dt);
@@ -86,12 +91,40 @@ function loop(t) {
     spawner.removeDead(enemies);
     spawner.maybeSpawn(enemies, plane, gs.kills);
     gunState = guns.update(dt, plane, enemies);
+
+    if (cockpit.userData.flash) {
+      cockpit.userData.flash.material.opacity = Math.max(0, guns.flashTimer * 12);
+    }
+
     for (const e of enemies) {
       if (e.alive && e.hp <= 0) {
         e.alive = false;
         gs.kills++;
+        for (let i = 0; i < 10; i++) emitSmoke(smokePool, e.position.x, e.position.y, e.position.z, 1.2);
       }
     }
+
+    smokeTimer -= dt;
+    if (smokeTimer <= 0) {
+      smokeTimer = 0.05;
+      for (const e of enemies) {
+        if (e.alive && e.hp < 30) {
+          emitSmoke(smokePool,
+            e.position.x - e.forward.x * 1.5,
+            e.position.y - e.forward.y * 1.5,
+            e.position.z - e.forward.z * 1.5,
+            1.0);
+        }
+      }
+      if (plane.hp < 30 && plane.alive) {
+        emitSmoke(smokePool,
+          plane.position.x - plane.forward.x * 2,
+          plane.position.y - plane.forward.y * 2,
+          plane.position.z - plane.forward.z * 2,
+          1.2);
+      }
+    }
+
     if (plane.hp <= 0 && plane.alive) {
       plane.alive = false;
       gs.die();
