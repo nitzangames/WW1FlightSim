@@ -3,7 +3,7 @@ import { createRenderer } from './renderer.js';
 import { buildWorld } from './world.js';
 import { Joystick } from './input.js';
 import { Plane } from './plane.js';
-import { buildFokker } from './models.js';
+import { buildFokker, buildCockpit } from './models.js';
 
 const gameCanvas = document.getElementById('game-canvas');
 const overlayCanvas = document.getElementById('overlay-canvas');
@@ -14,6 +14,9 @@ overlayCanvas.height = CANVAS_H;
 
 const { renderer, scene, camera } = createRenderer(gameCanvas);
 camera.rotation.order = 'YXZ';
+const cockpit = buildCockpit();
+camera.add(cockpit);
+scene.add(camera);
 buildWorld(scene);
 
 // Player plane and its mesh
