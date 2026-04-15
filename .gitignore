@@ -1,0 +1,6 @@
+.DS_Store
+node_modules/
+error.log
+/tmp/
+screenshot*.png
+ss-*.png

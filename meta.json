@@ -1,0 +1,8 @@
+{
+  "slug": "ww1-flight-sim",
+  "title": "WW1 Flight Sim",
+  "description": "One-touch WW1 dogfight. Pilot the Red Baron's triplane, auto-fire when an enemy is in your sights.",
+  "tags": ["action", "3d", "dogfight", "arcade"],
+  "author": "Nitzan Wilnai",
+  "thumbnail": "thumbnail.png"
+}

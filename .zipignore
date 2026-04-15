@@ -1,0 +1,11 @@
+.git/*
+.superpowers/*
+docs/*
+tests/*
+node_modules/*
+error.log
+screenshot*.png
+ss-*.png
+.zipignore
+.gitignore
+CLAUDE.md
