@@ -20,13 +20,27 @@ function smoothNoise(x, z) {
   return a + (b - a) * sz;
 }
 
+function smoothstep(a, b, x) {
+  const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
+
 // Sample a terrain height at world-space (x, z). Exported so future code can place things on the surface.
 export function terrainHeight(x, z) {
-  return (
-    smoothNoise(x * 0.0015, z * 0.0015) * 35 +
-    smoothNoise(x * 0.005, z * 0.005) * 12 +
-    smoothNoise(x * 0.02, z * 0.02) * 3
-  );
+  const r = Math.hypot(x, z);
+  // Base rolling hills, more pronounced than before.
+  const hills =
+    smoothNoise(x * 0.0015, z * 0.0015) * 55 +
+    smoothNoise(x * 0.005, z * 0.005) * 22 +
+    smoothNoise(x * 0.02, z * 0.02) * 5;
+  // Edge ramp: terrain climbs into mountain ridges beyond ~1800m from center.
+  const edgeBoost = smoothstep(1800, 3000, r) * 380;
+  // Extra jaggedness in the mountain band so peaks feel uneven.
+  const mountainNoise =
+    smoothstep(1600, 3200, r) *
+    (smoothNoise(x * 0.004, z * 0.004) * 120 +
+     smoothNoise(x * 0.012, z * 0.012) * 45);
+  return hills + edgeBoost + mountainNoise;
 }
 
 export function buildWorld(scene) {
@@ -61,7 +75,7 @@ export function buildWorld(scene) {
 
   // Low-poly ground: 50×50 plane, displaced and flat-shaded, one color per triangle.
   // Coarse triangles + hard facets = visible geometric terrain at altitude.
-  const groundGeo = new THREE.PlaneGeometry(WORLD.GROUND_SIZE, WORLD.GROUND_SIZE, 50, 50);
+  const groundGeo = new THREE.PlaneGeometry(WORLD.GROUND_SIZE, WORLD.GROUND_SIZE, 90, 90);
   {
     const pos = groundGeo.attributes.position;
     for (let i = 0; i < pos.count; i++) {
@@ -80,9 +94,11 @@ export function buildWorld(scene) {
   const BIOMES = [
     { max: -12, colors: [0x2b4a1f, 0x324d23, 0x3a5a2a] }, // deep green (valleys)
     { max:   0, colors: [0x446b28, 0x4e7630, 0x5a842f] }, // mid green (grass)
-    { max:  12, colors: [0x7a8c42, 0x8a994d, 0x6f8040] }, // olive / fields
-    { max:  25, colors: [0x9a7a3c, 0x8c6a30, 0x7e5a24] }, // tan / dirt
-    { max:  Infinity, colors: [0x6f5b36, 0x5f4d2a, 0x8f6f48] }, // bare hillside / rocky
+    { max:  15, colors: [0x7a8c42, 0x8a994d, 0x6f8040] }, // olive / fields
+    { max:  40, colors: [0x9a7a3c, 0x8c6a30, 0x7e5a24] }, // tan / dirt
+    { max: 110, colors: [0x6f5b36, 0x5f4d2a, 0x8f6f48] }, // bare hillside
+    { max: 220, colors: [0x6a6765, 0x54504d, 0x7a7672] }, // rocky grey
+    { max: Infinity, colors: [0xe8e8e8, 0xcfcfcf, 0xdadce0] }, // snow caps
   ];
   function pickBiomeColor(faceHeight, seed) {
     for (const b of BIOMES) {
@@ -156,7 +172,7 @@ export function buildWorld(scene) {
   const clusterCount = 12;
   const treesPerCluster = 25;
   const clusterRadius = 60;
-  const mapRadius = 2400;
+  const mapRadius = 1700; // keep forests in the lowland plain, below the mountain ring
 
   for (let c = 0; c < clusterCount; c++) {
     // Pick cluster center (avoid trench corridor z: -50 to +50)
@@ -185,26 +201,6 @@ export function buildWorld(scene) {
       tree.rotation.y = Math.random() * Math.PI * 2;
       scene.add(tree);
     }
-  }
-
-  // Distant mountain ring: ~40 low-poly cones at horizon
-  const mountainGeo = new THREE.ConeGeometry(220, 450, 5);
-  const mountainMat = new THREE.MeshLambertMaterial({ color: 0x5e6872 });
-
-  const mountainCount = 40;
-  const mountainRadius = 3500;
-
-  for (let m = 0; m < mountainCount; m++) {
-    const angle = (m / mountainCount) * Math.PI * 2;
-    const rJitter = mountainRadius + (Math.random() - 0.5) * 400;
-    const scaleJitter = 0.85 + Math.random() * 0.3;
-    const x = Math.cos(angle) * rJitter;
-    const z = Math.sin(angle) * rJitter;
-
-    const mountain = new THREE.Mesh(mountainGeo, mountainMat);
-    mountain.position.set(x, WORLD.GROUND_Y + 180, z); // Positioned so peaks show
-    mountain.scale.set(scaleJitter, scaleJitter, scaleJitter);
-    scene.add(mountain);
   }
 
   // Clouds: billboard sprites scattered
