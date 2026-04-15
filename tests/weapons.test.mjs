@@ -41,3 +41,20 @@ test('leadTarget predicts intercept point', () => {
   const pt = leadTarget(shooter, target, bulletSpeed);
   assert.ok(pt.z > -100);
 });
+
+test('leadTarget falls back safely when target outruns bullet', () => {
+  const shooter = { x: 0, y: 0, z: 0 };
+  const target = { x: 0, y: 0, z: -100, vx: 50, vy: 0, vz: 0 };
+  const bulletSpeed = 10;
+  const pt = leadTarget(shooter, target, bulletSpeed);
+  assert.ok(Number.isFinite(pt.x) && Number.isFinite(pt.y) && Number.isFinite(pt.z));
+  assert.ok(pt.t >= 0);
+});
+
+test('leadTarget avoids NaN when target matches bullet speed perpendicular', () => {
+  const shooter = { x: 0, y: 0, z: 0 };
+  const target = { x: 100, y: 0, z: 0, vx: 0, vy: 0, vz: 200 };
+  const bulletSpeed = 200;
+  const pt = leadTarget(shooter, target, bulletSpeed);
+  assert.ok(Number.isFinite(pt.x) && Number.isFinite(pt.y) && Number.isFinite(pt.z));
+});

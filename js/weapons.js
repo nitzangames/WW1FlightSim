@@ -21,7 +21,10 @@ export function leadTarget(shooter, target, bulletSpeed) {
   const c = dx * dx + dy * dy + dz * dz;
   let t;
   if (Math.abs(a) < 1e-6) {
-    t = -c / b;
+    // Target matches bullet speed: linear solve. Fall back to range/speed
+    // when b≈0 (perpendicular motion) so we never return NaN.
+    t = Math.abs(b) < 1e-6 ? Math.hypot(dx, dy, dz) / bulletSpeed : -c / b;
+    if (!(t > 0)) t = Math.hypot(dx, dy, dz) / bulletSpeed;
   } else {
     const disc = b * b - 4 * a * c;
     if (disc < 0) t = Math.hypot(dx, dy, dz) / bulletSpeed;
