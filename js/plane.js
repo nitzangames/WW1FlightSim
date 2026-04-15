@@ -63,6 +63,7 @@ export class Plane {
     this.forward.y = fy;
     this.forward.z = fz;
 
-    this.damageFlash = Math.max(0, this.damageFlash - dt * 3);
+    // Faster decay so each hit feels like a sharp pulse rather than a slow glow.
+    this.damageFlash = Math.max(0, this.damageFlash - dt * 5);
   }
 }

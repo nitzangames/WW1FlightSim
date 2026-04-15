@@ -14,6 +14,10 @@ export class Enemy {
     this.forward = { x: 0, y: 0, z: -1 };
     this.mesh = buildBiplane();
     this.mesh.rotation.order = 'YXZ';
+    this.firing = false;
+    this.fireTimer = 0;
+    this.justFired = false;
+    this.lastShotHit = false;
   }
 
   update(dt, player) {
@@ -50,7 +54,11 @@ export class Enemy {
     this.forward.y = fy;
     this.forward.z = fz;
 
-    // Fire at player if in-cone + in range
+    // Fire at player if in-cone + in range.
+    // Discrete shots: decrement fireTimer each frame while firing; every tick
+    // it hits zero we spawn one bullet event (tracer + possible damage).
+    this.justFired = false;
+    this.lastShotHit = false;
     const px = player.position.x - this.position.x;
     const py = player.position.y - this.position.y;
     const pz = player.position.z - this.position.z;
@@ -60,9 +68,19 @@ export class Enemy {
       const ang = Math.acos(Math.min(1, Math.max(-1, dot)));
       const FIRE_CONE = ENEMY.FIRE_CONE_DEG * Math.PI / 180;
       this.firing = (dToPlayer < ENEMY.FIRE_RANGE && ang < FIRE_CONE && dot > 0);
-      if (this.firing && player.alive) {
-        player.hp -= ENEMY.DPS * dt;
-        player.damageFlash = Math.min(1, (player.damageFlash || 0) + ENEMY.DPS * dt / 20);
+      if (this.firing) {
+        this.fireTimer -= dt;
+        if (this.fireTimer <= 0) {
+          this.fireTimer = ENEMY.FIRE_INTERVAL;
+          this.justFired = true;
+          if (player.alive && Math.random() < ENEMY.HIT_CHANCE) {
+            player.hp -= ENEMY.DAMAGE_PER_HIT;
+            player.damageFlash = Math.min(1, (player.damageFlash || 0) + 0.35);
+            this.lastShotHit = true;
+          }
+        }
+      } else {
+        this.fireTimer = ENEMY.FIRE_INTERVAL * 0.5; // small delay before first shot on re-acquire
       }
     } else {
       this.firing = false;
@@ -80,8 +98,13 @@ export class Enemy {
         z: player.position.z + player.forward.z * 200,
       };
     }
-    // Chaser: aim at player's current position
-    return { ...player.position };
+    // Chaser: aim at a lead point ~60m ahead of the player so we close
+    // faster than a pure tail-chase.
+    return {
+      x: player.position.x + player.forward.x * 60,
+      y: player.position.y + player.forward.y * 60,
+      z: player.position.z + player.forward.z * 60,
+    };
   }
 
   syncMesh() {

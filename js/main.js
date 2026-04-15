@@ -7,7 +7,8 @@ import { buildFokker, buildCockpit, createSmokePool, emitSmoke, updateSmoke } fr
 import { drawHud } from './hud.js';
 import { Spawner } from './enemy-spawner.js';
 import { Enemy } from './enemy.js';
-import { Guns } from './weapons.js';
+import { Guns, EnemyTracers } from './weapons.js';
+import { ENEMY } from './config.js';
 import { GameState, STATE } from './game.js';
 import { initAudio, startEngine, stopEngine, setEnginePitch, playGunBurst, playHit, playKill } from './audio.js';
 
@@ -36,6 +37,7 @@ scene.add(planeMesh);
 const enemies = [];
 const spawner = new Spawner(scene);
 const guns = new Guns(scene);
+const enemyTracers = new EnemyTracers(scene);
 
 const smokePool = createSmokePool(scene);
 let smokeTimer = 0;
@@ -102,6 +104,7 @@ function loop(t) {
   last = t;
 
   updateSmoke(smokePool, dt);
+  enemyTracers.update(dt);
 
   const isPlaying = gs.state === STATE.PLAYING;
   if (isPlaying && !wasPlaying) startEngine();
@@ -114,6 +117,19 @@ function loop(t) {
     plane.update(dt, joystick.value());
     syncCameraToPlane();
     for (const e of enemies) e.update(dt, plane);
+    // Spawn enemy tracers for every enemy that just fired. Miss rounds drift off
+    // in the same direction so the player sees both hits and near-misses.
+    const spread = ENEMY.TRACER_SPREAD_DEG * Math.PI / 180;
+    for (const e of enemies) {
+      if (!e.justFired) continue;
+      // Origin: just in front of enemy's nose
+      const ox = e.position.x + e.forward.x * 2;
+      const oy = e.position.y + e.forward.y * 2;
+      const oz = e.position.z + e.forward.z * 2;
+      // Hit rounds aim closer to the player; misses get extra spread.
+      const extraSpread = e.lastShotHit ? spread * 0.5 : spread * 2.5;
+      enemyTracers.spawn({ x: ox, y: oy, z: oz }, plane.position, extraSpread);
+    }
     spawner.removeDead(enemies);
     spawner.maybeSpawn(enemies, plane, gs.kills);
     gunState = guns.update(dt, plane, enemies);

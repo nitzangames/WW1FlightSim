@@ -48,17 +48,19 @@ export function buildCockpit() {
   const red = new THREE.MeshLambertMaterial({ color: 0xb01a1a });
   const black = new THREE.MeshLambertMaterial({ color: 0x111111 });
 
-  // Top-wing sliver: red plank at top-forward. Gun barrels + muzzle flash moved to the 2D HUD.
-  const topWing = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.06, 0.6), red);
-  topWing.position.set(0, 0.3, -0.9);
+  // Top-wing sliver: thin red plank pushed high and flat so it only covers the
+  // very top of the view (not a wedge of perspective). Gun barrels + muzzle
+  // flash moved to the 2D HUD.
+  const topWing = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.08, 0.2), red);
+  topWing.position.set(0, 0.7, -1.0);
   group.add(topWing);
 
   // Black iron cross on top wing (small flat box)
-  const cross1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.061, 0.08), black);
-  cross1.position.set(0, 0.31, -0.9);
+  const cross1 = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.082, 0.08), black);
+  cross1.position.set(0, 0.71, -1.0);
   group.add(cross1);
-  const cross2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.061, 0.3), black);
-  cross2.position.set(0, 0.31, -0.9);
+  const cross2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.082, 0.18), black);
+  cross2.position.set(0, 0.71, -1.0);
   group.add(cross2);
 
   return group;

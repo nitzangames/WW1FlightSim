@@ -151,3 +151,9 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > great! now its good.
 
 (→ build the approved cockpit in the live game: 2D overlay dashboard + gauges + HP bar + gun breeches; strip the old 3D gun barrels and the floating HP/altitude HUD)
+
+## 30. Tracers + enemy fire + red flash + nerfed AI + reposition top wing
+
+> I want to see bullets flying out, like tracer fire. I also want to see when the enemies shoot at me. I should see bullets flying past, and I want the screen to flash red when I get hit. Also make the AI less agressive. Move the top wing all the way to the top of the screen, so it only covers a bit of the top.
+
+(→ beefier player tracers, new enemy tracer pool with orange-red bullets and spread, discrete per-hit damage + impactful red flash, lower enemy turn rate and hit chance, raise top wing so it only covers a sliver)

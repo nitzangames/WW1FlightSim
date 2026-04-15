@@ -142,16 +142,24 @@ export function drawHud(ctx, state) {
   ctx.save();
   ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
 
-  // Damage vignette
+  // Damage vignette — more aggressive. Strong red ring AND a brief full-screen
+  // red tint when flash is high (hit within the last ~100ms).
   if (state.damageFlash > 0) {
+    const f = Math.max(0, Math.min(1, state.damageFlash));
     const g = ctx.createRadialGradient(
-      CANVAS_W / 2, CANVAS_H / 2, CANVAS_W * 0.2,
-      CANVAS_W / 2, CANVAS_H / 2, CANVAS_W * 0.75
+      CANVAS_W / 2, CANVAS_H / 2, CANVAS_W * 0.05,
+      CANVAS_W / 2, CANVAS_H / 2, CANVAS_W * 0.72
     );
-    g.addColorStop(0, 'rgba(255,0,0,0)');
-    g.addColorStop(1, `rgba(180,0,0,${state.damageFlash.toFixed(2)})`);
+    g.addColorStop(0, `rgba(255,40,40,${(f * 0.15).toFixed(2)})`);
+    g.addColorStop(0.55, `rgba(220,20,20,${(f * 0.55).toFixed(2)})`);
+    g.addColorStop(1, `rgba(140,0,0,${f.toFixed(2)})`);
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    // Extra full-screen red tint on fresh hits
+    if (f > 0.7) {
+      ctx.fillStyle = `rgba(255,30,30,${((f - 0.7) * 0.6).toFixed(2)})`;
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    }
   }
 
   // Crosshair

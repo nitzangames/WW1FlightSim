@@ -24,7 +24,10 @@ export class Spawner {
       const y = player.position.y + alt;
       const mode = Math.random() < 0.6 ? 'chaser' : 'jouster';
       const e = new Enemy({ x, y, z, mode });
-      e.yaw = bearing + Math.PI;
+      // Face the player on spawn. The spawn formula uses +sin/+cos of bearing,
+      // and forward at yaw=bearing is exactly -(sin, 0, cos) — i.e. pointing
+      // back toward the origin. (Previous `bearing + π` pointed them away.)
+      e.yaw = bearing;
       enemies.push(e);
       this.scene.add(e.mesh);
     }

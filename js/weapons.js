@@ -48,9 +48,10 @@ export class Guns {
     this.flashTimer = 0;
     this._tracerCounter = 0;
 
-    const geom = new THREE.CylinderGeometry(0.04, 0.04, 3.0, 6);
+    // Bigger, longer tracers so the stream reads clearly against sky/terrain.
+    const geom = new THREE.CylinderGeometry(0.12, 0.12, 5.0, 6);
     geom.rotateX(Math.PI / 2);
-    const mat = new THREE.MeshBasicMaterial({ color: 0xffe58a, fog: false });
+    const mat = new THREE.MeshBasicMaterial({ color: 0xffe26a, fog: false });
     for (let i = 0; i < maxTracers; i++) {
       const m = new THREE.Mesh(geom, mat);
       m.visible = false;
@@ -125,7 +126,77 @@ export class Guns {
     slot.vx = player.forward.x * this.bulletSpeed;
     slot.vy = player.forward.y * this.bulletSpeed;
     slot.vz = player.forward.z * this.bulletSpeed;
-    slot.life = 0.8;
+    slot.life = 1.0;
+  }
+}
+
+// Enemy tracer pool: red-orange rounds fired toward the player.
+// Visual only — damage is applied directly in Enemy.update.
+export class EnemyTracers {
+  constructor(scene, maxTracers = 80) {
+    this.tracers = [];
+    this.bulletSpeed = 340; // slower than player rounds so they're more visible passing by
+
+    const geom = new THREE.CylinderGeometry(0.14, 0.14, 4.5, 6);
+    geom.rotateX(Math.PI / 2);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xff5a2e, fog: false });
+    for (let i = 0; i < maxTracers; i++) {
+      const m = new THREE.Mesh(geom, mat);
+      m.visible = false;
+      this.tracers.push({ mesh: m, life: 0, vx: 0, vy: 0, vz: 0 });
+      scene.add(m);
+    }
+  }
+
+  // Spawn a tracer from `origin` aiming at `targetPos` with `spreadRad` of random offset.
+  spawn(origin, targetPos, spreadRad = 0) {
+    const slot = this.tracers.find(t => !t.mesh.visible);
+    if (!slot) return;
+    let dx = targetPos.x - origin.x;
+    let dy = targetPos.y - origin.y;
+    let dz = targetPos.z - origin.z;
+    const d = Math.hypot(dx, dy, dz) || 1;
+    dx /= d; dy /= d; dz /= d;
+    // Apply spread: small random perpendicular nudge
+    if (spreadRad > 0) {
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.tan(Math.random() * spreadRad);
+      // pick an arbitrary perpendicular basis (up-ish)
+      const up = Math.abs(dy) < 0.9 ? { x: 0, y: 1, z: 0 } : { x: 1, y: 0, z: 0 };
+      // right = up × dir
+      const rx = up.y * dz - up.z * dy;
+      const ry = up.z * dx - up.x * dz;
+      const rz = up.x * dy - up.y * dx;
+      const rm = Math.hypot(rx, ry, rz) || 1;
+      const rnx = rx / rm, rny = ry / rm, rnz = rz / rm;
+      // upn = dir × right
+      const unx = dy * rnz - dz * rny;
+      const uny = dz * rnx - dx * rnz;
+      const unz = dx * rny - dy * rnx;
+      dx += r * (Math.cos(a) * rnx + Math.sin(a) * unx);
+      dy += r * (Math.cos(a) * rny + Math.sin(a) * uny);
+      dz += r * (Math.cos(a) * rnz + Math.sin(a) * unz);
+      const m2 = Math.hypot(dx, dy, dz) || 1;
+      dx /= m2; dy /= m2; dz /= m2;
+    }
+    slot.mesh.visible = true;
+    slot.mesh.position.set(origin.x, origin.y, origin.z);
+    slot.mesh.lookAt(origin.x + dx, origin.y + dy, origin.z + dz);
+    slot.vx = dx * this.bulletSpeed;
+    slot.vy = dy * this.bulletSpeed;
+    slot.vz = dz * this.bulletSpeed;
+    slot.life = 1.4; // long enough to pass the player visibly
+  }
+
+  update(dt) {
+    for (const t of this.tracers) {
+      if (!t.mesh.visible) continue;
+      t.mesh.position.x += t.vx * dt;
+      t.mesh.position.y += t.vy * dt;
+      t.mesh.position.z += t.vz * dt;
+      t.life -= dt;
+      if (t.life <= 0) t.mesh.visible = false;
+    }
   }
 }
 

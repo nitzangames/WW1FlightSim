@@ -1,4 +1,4 @@
-export const VERSION = 'v0.2.0';
+export const VERSION = 'v0.2.1';
 
 export const CANVAS_W = 1080;
 export const CANVAS_H = 1920;
@@ -14,11 +14,14 @@ export const PLAYER = {
 
 export const ENEMY = {
   HP: 60,
-  SPEED: 75,
-  TURN_CAP: Math.PI * 40 / 180,  // 40 deg/s for chaser
-  FIRE_CONE_DEG: 12,
+  SPEED: 88,             // slightly faster than player so they can actually close
+  TURN_CAP: Math.PI * 28 / 180,  // 28 deg/s — still looser than original 40, but can engage
+  FIRE_CONE_DEG: 10,
   FIRE_RANGE: 350,
-  DPS: 10,
+  FIRE_INTERVAL: 0.15,   // seconds between enemy shots
+  DAMAGE_PER_HIT: 0.9,   // hp per bullet that connects
+  HIT_CHANCE: 0.55,      // fraction of fired bullets that actually hit (rest visibly miss)
+  TRACER_SPREAD_DEG: 4,  // random visual spread on enemy tracers
 };
 
 export const GUN = {
@@ -41,7 +44,7 @@ export const SPAWN = {
   START_COUNT: 2,
   CAP_COUNT: 4,
   KILLS_PER_RAMP: 5,
-  SPAWN_MIN_DIST: 900,
-  SPAWN_MAX_DIST: 1400,
+  SPAWN_MIN_DIST: 350,
+  SPAWN_MAX_DIST: 550,
   SPAWN_ALT_JITTER: 100,
 };
