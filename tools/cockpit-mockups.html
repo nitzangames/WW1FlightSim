@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Cockpit mockups</title>
+<style>
+  body { margin: 0; background: #1a1a1a; font-family: -apple-system, sans-serif; color: #ddd; padding: 20px; }
+  h1 { margin: 0 0 20px; }
+  .row { display: flex; gap: 20px; flex-wrap: wrap; }
+  .panel { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .panel canvas { background: #6fa6d6; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+  .label { font-size: 16px; font-weight: bold; }
+  .sub { font-size: 13px; opacity: 0.7; max-width: 280px; text-align: center; }
+</style>
+</head>
+<body>
+<h1>Cockpit / HUD mockups — WW1 Flight Sim</h1>
+<div class="row" style="margin-bottom: 30px;">
+  <div class="panel">
+    <canvas id="mE" width="450" height="800" style="background:#6fa6d6"></canvas>
+    <div class="label" style="font-size:20px">E — A + D + drum guns (current pick)</div>
+    <div class="sub" style="max-width:400px">Wooden dashboard, 3 brass gauges (big ALT center, ASI+RPM flanking), circular drum-style gun mechanisms poking through the dashboard. HP bar inset. Red top wing above.</div>
+  </div>
+</div>
+<div class="row">
+  <div class="panel">
+    <canvas id="m1" width="360" height="640"></canvas>
+    <div class="label">A — Classic WW1 dashboard</div>
+    <div class="sub">Wooden panel with 4 brass gauges. Gun barrels poke up from panel. Top wing visible. Digital HUD floats over cockpit.</div>
+  </div>
+  <div class="panel">
+    <canvas id="m2" width="360" height="640"></canvas>
+    <div class="label">B — Goggles view</div>
+    <div class="sub">Dark circular vignette (flight goggles). Minimal dashboard curl. 2 big gauges at bottom. Very immersive, narrower view.</div>
+  </div>
+  <div class="panel">
+    <canvas id="m3" width="360" height="640"></canvas>
+    <div class="label">C — Full pit + pilot hands</div>
+    <div class="sub">Large wooden dashboard, 5 gauges, visible joystick with gloved hands, leather-padded edges, engine cowl forward.</div>
+  </div>
+  <div class="panel">
+    <canvas id="m4" width="360" height="640"></canvas>
+    <div class="label">D — Canvas &amp; leather</div>
+    <div class="sub">Fabric fuselage interior, 3 gauges set in leather, compass rose below gunsight. Warmer, softer look.</div>
+  </div>
+</div>
+
+<script>
+// ---------- utilities ----------
+function fillSky(ctx, W, H) {
+  const g = ctx.createLinearGradient(0, 0, 0, H * 0.7);
+  g.addColorStop(0, '#6fa6d6');
+  g.addColorStop(1, '#d7c89a');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H * 0.75);
+  // simple ground tint
+  const gg = ctx.createLinearGradient(0, H * 0.75, 0, H);
+  gg.addColorStop(0, '#8aa650'); gg.addColorStop(1, '#5a7a30');
+  ctx.fillStyle = gg;
+  ctx.fillRect(0, H * 0.75, W, H * 0.25);
+  // one cloud
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.beginPath(); ctx.arc(W * 0.3, H * 0.25, 30, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(W * 0.36, H * 0.23, 22, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawGauge(ctx, cx, cy, r, label, value, max = 200, color = '#ffe580') {
+  // Brass ring
+  ctx.fillStyle = '#b38b3a';
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  // Black dial
+  ctx.fillStyle = '#1a1a1a';
+  ctx.beginPath(); ctx.arc(cx, cy, r * 0.88, 0, Math.PI * 2); ctx.fill();
+  // Tick marks
+  ctx.strokeStyle = '#f0e0a0'; ctx.lineWidth = 1.5;
+  for (let i = 0; i <= 10; i++) {
+    const a = -Math.PI * 1.25 + (Math.PI * 1.5) * (i / 10);
+    const r1 = r * 0.72, r2 = r * 0.85;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+    ctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
+    ctx.stroke();
+  }
+  // Needle
+  const t = value / max;
+  const na = -Math.PI * 1.25 + Math.PI * 1.5 * t;
+  ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + Math.cos(na) * r * 0.75, cy + Math.sin(na) * r * 0.75);
+  ctx.stroke();
+  // Hub
+  ctx.fillStyle = '#eee';
+  ctx.beginPath(); ctx.arc(cx, cy, 2, 0, Math.PI * 2); ctx.fill();
+  // Label
+  ctx.fillStyle = '#bbb';
+  ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(label, cx, cy + r + 12);
+}
+
+function woodPanel(ctx, x, y, w, h) {
+  const g = ctx.createLinearGradient(0, y, 0, y + h);
+  g.addColorStop(0, '#7a5128');
+  g.addColorStop(0.5, '#5f3e1f');
+  g.addColorStop(1, '#3e2814');
+  ctx.fillStyle = g;
+  ctx.fillRect(x, y, w, h);
+  // wood grain strokes
+  ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 8; i++) {
+    const yy = y + (i / 8) * h + (Math.random() * 3 - 1.5);
+    ctx.beginPath();
+    ctx.moveTo(x, yy);
+    ctx.bezierCurveTo(x + w * 0.33, yy + 2, x + w * 0.66, yy - 2, x + w, yy);
+    ctx.stroke();
+  }
+  // brass nail heads
+  ctx.fillStyle = '#b38b3a';
+  for (let i = 0; i < 6; i++) {
+    const px = x + 10 + (i * (w - 20) / 5);
+    ctx.beginPath(); ctx.arc(px, y + 6, 2.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(px, y + h - 6, 2.5, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function gunBarrels(ctx, cx, cy, scale = 1) {
+  // simple twin barrels
+  ctx.fillStyle = '#2a2e36';
+  for (const x of [-14, 14]) {
+    const xx = cx + x * scale;
+    ctx.beginPath();
+    ctx.moveTo(xx - 4 * scale, cy);
+    ctx.lineTo(xx + 4 * scale, cy);
+    ctx.lineTo(xx + 3 * scale, cy - 60 * scale);
+    ctx.lineTo(xx - 3 * scale, cy - 60 * scale);
+    ctx.closePath();
+    ctx.fill();
+    // tip
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(xx - 3 * scale, cy - 64 * scale, 6 * scale, 4 * scale);
+    ctx.fillStyle = '#2a2e36';
+  }
+}
+
+function crosshair(ctx, cx, cy, r = 24, locked = false) {
+  ctx.strokeStyle = locked ? '#ffd65a' : 'rgba(255,255,255,0.75)';
+  ctx.lineWidth = locked ? 2.5 : 1.5;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx - 10, cy); ctx.lineTo(cx + 10, cy);
+  ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy + 10);
+  ctx.stroke();
+}
+
+function miniHud(ctx, W, H) {
+  // minimap top-right
+  const mcx = W - 48, mcy = 48, mr = 36;
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.beginPath(); ctx.arc(mcx, mcy, mr, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = '#cfe6ff';
+  ctx.beginPath();
+  ctx.moveTo(mcx, mcy - 6); ctx.lineTo(mcx - 4, mcy + 4); ctx.lineTo(mcx + 4, mcy + 4);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#ff4a4a';
+  ctx.beginPath(); ctx.arc(mcx + 8, mcy - 10, 2.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(mcx - 15, mcy + 6, 2.5, 0, Math.PI * 2); ctx.fill();
+
+  // kills top-left
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('KILLS 3', 12, 24);
+  ctx.font = '10px sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.fillText('BEST 11', 12, 38);
+}
+
+// Gun breech seen end-on: just a circle (barrel bore as pilot sees it from behind).
+// Sits on the dashboard — a dark steel ring around a black bore.
+function gunBreech(ctx, cx, cy, r = 16) {
+  // Outer steel housing ring
+  ctx.fillStyle = '#2a2e36';
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  // Rim highlight (top-left catches light)
+  ctx.strokeStyle = '#5a606a';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(cx, cy, r - 1, 0, Math.PI * 2); ctx.stroke();
+  // Black bore
+  ctx.fillStyle = '#050507';
+  ctx.beginPath(); ctx.arc(cx, cy, r * 0.55, 0, Math.PI * 2); ctx.fill();
+}
+
+// ---------- MOCKUP E: A + D gauges + drum guns (current pick) ----------
+(function () {
+  const c = document.getElementById('mE');
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  fillSky(ctx, W, H);
+
+  // Top wing strip (from A)
+  ctx.fillStyle = '#b01a1a';
+  ctx.fillRect(0, 0, W, 36);
+  // Black iron cross on top wing
+  ctx.fillStyle = '#181818';
+  ctx.fillRect(W / 2 - 22, 8, 44, 20);
+  ctx.fillStyle = '#b01a1a';
+  ctx.fillRect(W / 2 - 14, 14, 28, 8);
+
+  // Crosshair
+  crosshair(ctx, W / 2, H * 0.44, 28);
+
+  // Wooden dashboard (32% of screen, from A)
+  const dashH = H * 0.32;
+  const dashY = H - dashH;
+  woodPanel(ctx, 0, dashY, W, dashH);
+
+  // Leather padded top edge on dashboard (hint from D)
+  ctx.fillStyle = '#2e1d10';
+  ctx.fillRect(0, dashY, W, 10);
+  ctx.strokeStyle = '#d7b470'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.moveTo(0, dashY + 5); ctx.lineTo(W, dashY + 5); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 3 gauges (D layout, A panel): small ASI, big ALT, small RPM
+  const gyR = dashY + dashH * 0.45;
+  drawGauge(ctx, W * 0.18, gyR, 36, 'ASI', 115, 200);
+  drawGauge(ctx, W * 0.5,  gyR, 46, 'ALT', 85, 200);
+  drawGauge(ctx, W * 0.82, gyR, 36, 'RPM', 135, 200);
+
+  // HP bar inset in dashboard
+  ctx.fillStyle = '#000000bb';
+  ctx.fillRect(W * 0.15, dashY + dashH * 0.82, W * 0.7, 12);
+  ctx.fillStyle = '#c21515';
+  ctx.fillRect(W * 0.15, dashY + dashH * 0.82, W * 0.7 * 0.72, 12);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('72 / 100 HP', W / 2, dashY + dashH * 0.82 + 24);
+
+  // Twin gun bores (end-on view — what the pilot actually sees)
+  gunBreech(ctx, W / 2 - 40, dashY - 6, 18);
+  gunBreech(ctx, W / 2 + 40, dashY - 6, 18);
+
+  // Digital HUD overlay
+  miniHud(ctx, W, H);
+})();
+
+// ---------- MOCKUP A: Classic WW1 dashboard ----------
+(function () {
+  const c = document.getElementById('m1');
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  fillSky(ctx, W, H);
+  // top wing strip
+  ctx.fillStyle = '#b01a1a';
+  ctx.fillRect(0, 0, W, 26);
+  ctx.fillStyle = '#202020';
+  ctx.fillRect(W / 2 - 16, 6, 32, 14);
+  // crosshair
+  crosshair(ctx, W / 2, H * 0.48, 24);
+  // dashboard 30% of screen
+  const dashH = H * 0.32;
+  const dashY = H - dashH;
+  woodPanel(ctx, 0, dashY, W, dashH);
+  // 4 gauges
+  const gy = dashY + dashH * 0.35;
+  const gr = 32;
+  drawGauge(ctx, W * 0.15, gy, gr, 'ASI', 120, 200);
+  drawGauge(ctx, W * 0.38, gy, gr, 'ALT', 85, 200);
+  drawGauge(ctx, W * 0.62, gy, gr, 'COMP', 140, 200);
+  drawGauge(ctx, W * 0.85, gy, gr, 'RPM', 130, 200);
+  // HP bar across lower dashboard
+  ctx.fillStyle = '#000000aa';
+  ctx.fillRect(W * 0.1, dashY + dashH * 0.78, W * 0.8, 10);
+  ctx.fillStyle = '#c21515';
+  ctx.fillRect(W * 0.1, dashY + dashH * 0.78, W * 0.8 * 0.72, 10);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('72 HP', W / 2, dashY + dashH * 0.78 + 20);
+  // gun barrels sticking up through dash
+  gunBarrels(ctx, W / 2, dashY + 6, 1);
+  // digital HUD on top
+  miniHud(ctx, W, H);
+})();
+
+// ---------- MOCKUP B: Goggles view ----------
+(function () {
+  const c = document.getElementById('m2');
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  fillSky(ctx, W, H);
+  // Goggles vignette — two overlapping circles
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-over';
+  // dark surround
+  ctx.fillStyle = '#0d0a08';
+  ctx.fillRect(0, 0, W, H);
+  // punch out goggle holes
+  ctx.globalCompositeOperation = 'destination-out';
+  const eyeR = W * 0.33;
+  ctx.beginPath();
+  ctx.arc(W * 0.36, H * 0.42, eyeR, 0, Math.PI * 2);
+  ctx.arc(W * 0.64, H * 0.42, eyeR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  // Instead: redraw sky clipped to goggles shape
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(W * 0.36, H * 0.42, eyeR, 0, Math.PI * 2);
+  ctx.arc(W * 0.64, H * 0.42, eyeR, 0, Math.PI * 2);
+  ctx.clip();
+  fillSky(ctx, W, H);
+  crosshair(ctx, W / 2, H * 0.42, 18);
+  ctx.restore();
+  // brass goggle rims
+  ctx.strokeStyle = '#b38b3a'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(W * 0.36, H * 0.42, eyeR, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(W * 0.64, H * 0.42, eyeR, 0, Math.PI * 2); ctx.stroke();
+  // leather strap across top
+  ctx.fillStyle = '#3a2616';
+  ctx.fillRect(W * 0.1, H * 0.22, W * 0.8, 14);
+  // curved dashboard at bottom
+  ctx.fillStyle = '#5f3e1f';
+  ctx.beginPath();
+  ctx.moveTo(0, H);
+  ctx.lineTo(0, H * 0.75);
+  ctx.quadraticCurveTo(W / 2, H * 0.68, W, H * 0.75);
+  ctx.lineTo(W, H);
+  ctx.closePath();
+  ctx.fill();
+  // 2 big gauges
+  drawGauge(ctx, W * 0.28, H * 0.88, 38, 'ASI', 110, 200);
+  drawGauge(ctx, W * 0.72, H * 0.88, 38, 'ALT', 85, 200);
+  // HP
+  ctx.fillStyle = '#000000aa';
+  ctx.fillRect(W * 0.35, H * 0.78, W * 0.3, 7);
+  ctx.fillStyle = '#c21515';
+  ctx.fillRect(W * 0.35, H * 0.78, W * 0.3 * 0.72, 7);
+  // digital HUD
+  miniHud(ctx, W, H);
+})();
+
+// ---------- MOCKUP C: Full pit + pilot hands ----------
+(function () {
+  const c = document.getElementById('m3');
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  fillSky(ctx, W, H);
+  // top wing bigger
+  ctx.fillStyle = '#b01a1a';
+  ctx.fillRect(0, 0, W, 40);
+  ctx.fillStyle = '#202020';
+  ctx.fillRect(W / 2 - 20, 10, 40, 22);
+  // struts dangling from top wing
+  ctx.fillStyle = '#6b4a24';
+  ctx.fillRect(W * 0.18, 40, 3, 28);
+  ctx.fillRect(W * 0.82 - 3, 40, 3, 28);
+  // crosshair
+  crosshair(ctx, W / 2, H * 0.42, 24);
+  // Large wooden dashboard — 45% of screen
+  const dashH = H * 0.45;
+  const dashY = H - dashH;
+  // curved top edge
+  ctx.fillStyle = '#5f3e1f';
+  ctx.beginPath();
+  ctx.moveTo(0, H);
+  ctx.lineTo(0, dashY + 10);
+  ctx.quadraticCurveTo(W / 2, dashY - 28, W, dashY + 10);
+  ctx.lineTo(W, H);
+  ctx.closePath();
+  ctx.fill();
+  // leather padding strip along top edge
+  ctx.fillStyle = '#3a2616';
+  ctx.beginPath();
+  ctx.moveTo(0, dashY + 14);
+  ctx.quadraticCurveTo(W / 2, dashY - 18, W, dashY + 14);
+  ctx.lineTo(W, dashY + 30);
+  ctx.quadraticCurveTo(W / 2, dashY - 2, 0, dashY + 30);
+  ctx.closePath();
+  ctx.fill();
+  // stitching
+  ctx.strokeStyle = '#d7b470'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, dashY + 22);
+  ctx.quadraticCurveTo(W / 2, dashY - 10, W, dashY + 22);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 5 gauges in two rows
+  const gr = 28;
+  const row1Y = dashY + dashH * 0.35;
+  const row2Y = dashY + dashH * 0.68;
+  drawGauge(ctx, W * 0.2, row1Y, gr, 'ASI', 120, 200);
+  drawGauge(ctx, W * 0.5, row1Y, gr + 2, 'ALT', 85, 200);
+  drawGauge(ctx, W * 0.8, row1Y, gr, 'RPM', 140, 200);
+  drawGauge(ctx, W * 0.3, row2Y, gr - 4, 'OIL', 60, 200, '#88ff88');
+  drawGauge(ctx, W * 0.7, row2Y, gr - 4, 'FUEL', 160, 200, '#88ccff');
+
+  // Joystick at center-bottom
+  ctx.fillStyle = '#2a1e12';
+  ctx.fillRect(W / 2 - 3, H - 54, 6, 40);
+  ctx.fillStyle = '#7a5128';
+  ctx.beginPath(); ctx.arc(W / 2, H - 56, 10, 0, Math.PI * 2); ctx.fill();
+  // gloved hands (two brown blobs at center-bottom)
+  ctx.fillStyle = '#5a3a1a';
+  ctx.beginPath(); ctx.ellipse(W / 2 - 18, H - 22, 22, 16, -0.2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(W / 2 + 18, H - 22, 22, 16, 0.2, 0, Math.PI * 2); ctx.fill();
+
+  // gun barrels sticking up forward of dashboard, through the curve
+  gunBarrels(ctx, W / 2, dashY, 0.9);
+
+  // digital HUD
+  miniHud(ctx, W, H);
+})();
+
+// ---------- MOCKUP D: Canvas & leather ----------
+(function () {
+  const c = document.getElementById('m4');
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  fillSky(ctx, W, H);
+  // top wing
+  ctx.fillStyle = '#b01a1a';
+  ctx.fillRect(0, 0, W, 26);
+  // Canvas sides (tan fabric)
+  const sideW = W * 0.12;
+  // fabric gradient
+  const gL = ctx.createLinearGradient(0, 0, sideW, 0);
+  gL.addColorStop(0, '#6a5a42'); gL.addColorStop(1, '#a49270');
+  ctx.fillStyle = gL; ctx.fillRect(0, 0, sideW, H);
+  const gR = ctx.createLinearGradient(W - sideW, 0, W, 0);
+  gR.addColorStop(0, '#a49270'); gR.addColorStop(1, '#6a5a42');
+  ctx.fillStyle = gR; ctx.fillRect(W - sideW, 0, sideW, H);
+  // stitches on the fabric
+  ctx.strokeStyle = '#3a2616'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(sideW - 3, 0); ctx.lineTo(sideW - 3, H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W - sideW + 3, 0); ctx.lineTo(W - sideW + 3, H); ctx.stroke();
+  ctx.setLineDash([]);
+  // compass rose gunsight
+  const csX = W / 2, csY = H * 0.4;
+  ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(csX, csY, 30, 0, Math.PI * 2); ctx.stroke();
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(csX + Math.cos(a) * 24, csY + Math.sin(a) * 24);
+    ctx.lineTo(csX + Math.cos(a) * 30, csY + Math.sin(a) * 30);
+    ctx.stroke();
+  }
+  crosshair(ctx, csX, csY, 14);
+  // lower leather-padded dashboard
+  const dashH = H * 0.34, dashY = H - dashH;
+  const g = ctx.createLinearGradient(0, dashY, 0, H);
+  g.addColorStop(0, '#4a2e1a'); g.addColorStop(1, '#2a1a10');
+  ctx.fillStyle = g; ctx.fillRect(0, dashY, W, dashH);
+  // stitching ridge
+  ctx.strokeStyle = '#d7b470'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, dashY + 6); ctx.lineTo(W, dashY + 6); ctx.stroke();
+  ctx.setLineDash([]);
+  // 3 gauges in brass bezels
+  drawGauge(ctx, W * 0.2, dashY + dashH * 0.45, 34, 'ASI', 115, 200);
+  drawGauge(ctx, W * 0.5, dashY + dashH * 0.45, 38, 'ALT', 85, 200);
+  drawGauge(ctx, W * 0.8, dashY + dashH * 0.45, 34, 'RPM', 135, 200);
+  // HP strip
+  ctx.fillStyle = '#000000aa';
+  ctx.fillRect(W * 0.15, dashY + dashH * 0.82, W * 0.7, 8);
+  ctx.fillStyle = '#c21515';
+  ctx.fillRect(W * 0.15, dashY + dashH * 0.82, W * 0.7 * 0.72, 8);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('72 / 100 HP', W / 2, dashY + dashH * 0.82 + 18);
+  // gun barrels
+  gunBarrels(ctx, W / 2, dashY + 4, 1);
+  // digital HUD
+  miniHud(ctx, W, H);
+})();
+</script>
+</body></html>

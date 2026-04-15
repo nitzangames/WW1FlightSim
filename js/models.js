@@ -45,19 +45,10 @@ export function buildFokker() {
 
 export function buildCockpit() {
   const group = new THREE.Group();
-  const steel = new THREE.MeshLambertMaterial({ color: 0x2a2e36 });
   const red = new THREE.MeshLambertMaterial({ color: 0xb01a1a });
   const black = new THREE.MeshLambertMaterial({ color: 0x111111 });
 
-  // Twin gun barrels at bottom-center, extending forward
-  for (const x of [-0.15, 0.15]) {
-    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.6, 8), steel);
-    barrel.rotation.x = Math.PI / 2;
-    barrel.position.set(x, -0.18, -0.9);
-    group.add(barrel);
-  }
-
-  // Top-wing sliver: red plank at top-forward
+  // Top-wing sliver: red plank at top-forward. Gun barrels + muzzle flash moved to the 2D HUD.
   const topWing = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.06, 0.6), red);
   topWing.position.set(0, 0.3, -0.9);
   group.add(topWing);
@@ -69,16 +60,6 @@ export function buildCockpit() {
   const cross2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.061, 0.3), black);
   cross2.position.set(0, 0.31, -0.9);
   group.add(cross2);
-
-  const flashMat = new THREE.SpriteMaterial({
-    color: 0xffe080, transparent: true, opacity: 0.0, fog: false,
-  });
-  const flash = new THREE.Sprite(flashMat);
-  flash.scale.set(0.5, 0.5, 0.5);
-  flash.position.set(0, -0.18, -1.1);
-  flash.name = 'muzzle-flash';
-  group.add(flash);
-  group.userData.flash = flash;
 
   return group;
 }

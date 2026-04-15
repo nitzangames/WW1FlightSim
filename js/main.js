@@ -121,10 +121,6 @@ function loop(t) {
     if (plane.hp < prevPlayerHp) playHit();
     prevPlayerHp = plane.hp;
 
-    if (cockpit.userData.flash) {
-      cockpit.userData.flash.material.opacity = Math.max(0, guns.flashTimer * 12);
-    }
-
     for (const e of enemies) {
       if (e.alive && e.hp <= 0) {
         e.alive = false;
@@ -178,6 +174,10 @@ function loop(t) {
     joystick: { active: joystick.active, ax: joystick.ax, ay: joystick.ay, x: joystick.x, y: joystick.y, radius: joystick.radius },
     player: plane,
     enemies,
+    speed: plane.speed,
+    altitude: plane.position.y,
+    rpmJitter: Math.sin(t * 0.01) * 0.5 + Math.sin(t * 0.017) * 0.3,
+    gunFlash: guns.flashTimer,
   });
   rafId = requestAnimationFrame(loop);
 }
