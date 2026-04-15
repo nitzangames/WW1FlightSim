@@ -1,4 +1,6 @@
 import { VERSION, CANVAS_W, CANVAS_H } from './config.js';
+import { createRenderer } from './renderer.js';
+import { buildWorld } from './world.js';
 
 const gameCanvas = document.getElementById('game-canvas');
 const overlayCanvas = document.getElementById('overlay-canvas');
@@ -7,15 +9,28 @@ gameCanvas.height = CANVAS_H;
 overlayCanvas.width = CANVAS_W;
 overlayCanvas.height = CANVAS_H;
 
+const { renderer, scene, camera } = createRenderer(gameCanvas);
+buildWorld(scene);
+camera.position.set(0, 0, 0);
+camera.lookAt(0, 0, -100);
+
 const octx = overlayCanvas.getContext('2d');
 
-function drawBoot() {
+let last = performance.now();
+function loop(t) {
+  const dt = Math.min(0.05, (t - last) / 1000);
+  last = t;
+
+  renderer.render(scene, camera);
+
   octx.clearRect(0, 0, CANVAS_W, CANVAS_H);
   octx.fillStyle = '#fff';
-  octx.font = '36px sans-serif';
-  octx.textAlign = 'center';
-  octx.fillText('WW1 FLIGHT SIM ' + VERSION, CANVAS_W / 2, CANVAS_H / 2);
-}
+  octx.font = '20px sans-serif';
+  octx.textAlign = 'left';
+  octx.fillText(VERSION, 16, 32);
 
-drawBoot();
-console.log('WW1 Flight Sim boot', VERSION);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+console.log('WW1 Flight Sim running', VERSION);
