@@ -59,39 +59,61 @@ export function buildWorld(scene) {
   });
   scene.add(new THREE.Mesh(skyGeo, skyMat));
 
-  // Ground plane with noise-based hills (120x120 for smooth displacement)
-  const groundGeo = new THREE.PlaneGeometry(WORLD.GROUND_SIZE, WORLD.GROUND_SIZE, 120, 120);
-  const positions = groundGeo.attributes.position;
-  const colors = [];
-
-  // Displace vertices and color by height
-  for (let i = 0; i < positions.count; i++) {
-    const x = positions.getX(i);
-    const z = positions.getZ(i);
-    const height = terrainHeight(x, z);
-    positions.setZ(i, height);
-
-    // Color based on height: low = dark green, mid = bright green, high = brown
-    let r, g, b;
-    if (height < -15) {
-      r = 0.25; g = 0.45; b = 0.2;
-    } else if (height < 15) {
-      r = 0.3 + height / 60;
-      g = 0.55 + height / 80;
-      b = 0.25;
-    } else {
-      r = 0.6 + Math.min(height / 80, 0.2);
-      g = 0.52 + Math.min(height / 100, 0.15);
-      b = 0.35;
+  // Low-poly ground: 50×50 plane, displaced and flat-shaded, one color per triangle.
+  // Coarse triangles + hard facets = visible geometric terrain at altitude.
+  const groundGeo = new THREE.PlaneGeometry(WORLD.GROUND_SIZE, WORLD.GROUND_SIZE, 50, 50);
+  {
+    const pos = groundGeo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i); // PlaneGeometry is in XY; becomes XZ after rotation.
+      pos.setZ(i, terrainHeight(x, y));
     }
-    colors.push(r, g, b);
+    pos.needsUpdate = true;
   }
 
-  positions.needsUpdate = true;
-  groundGeo.computeVertexNormals();
-  groundGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  const groundMat = new THREE.MeshLambertMaterial({ vertexColors: true });
-  const ground = new THREE.Mesh(groundGeo, groundMat);
+  // Split shared vertices so each triangle can carry its own color.
+  const flatGeo = groundGeo.toNonIndexed();
+  flatGeo.computeVertexNormals();
+
+  // Biome palette: picked by average face height. Jittered within each biome.
+  const BIOMES = [
+    { max: -12, colors: [0x2b4a1f, 0x324d23, 0x3a5a2a] }, // deep green (valleys)
+    { max:   0, colors: [0x446b28, 0x4e7630, 0x5a842f] }, // mid green (grass)
+    { max:  12, colors: [0x7a8c42, 0x8a994d, 0x6f8040] }, // olive / fields
+    { max:  25, colors: [0x9a7a3c, 0x8c6a30, 0x7e5a24] }, // tan / dirt
+    { max:  Infinity, colors: [0x6f5b36, 0x5f4d2a, 0x8f6f48] }, // bare hillside / rocky
+  ];
+  function pickBiomeColor(faceHeight, seed) {
+    for (const b of BIOMES) {
+      if (faceHeight < b.max) return b.colors[seed % b.colors.length];
+    }
+    return 0x888888;
+  }
+
+  const triPos = flatGeo.attributes.position;
+  const faceColors = new THREE.Float32BufferAttribute(new Float32Array(triPos.count * 3), 3);
+  const tmp = new THREE.Color();
+  for (let i = 0; i < triPos.count; i += 3) {
+    const avgH = (triPos.getZ(i) + triPos.getZ(i + 1) + triPos.getZ(i + 2)) / 3;
+    // Deterministic seed from centroid so reloads look the same.
+    const cx = triPos.getX(i) + triPos.getX(i + 1) + triPos.getX(i + 2);
+    const cy = triPos.getY(i) + triPos.getY(i + 1) + triPos.getY(i + 2);
+    const seed = Math.floor(Math.abs(cx * 0.013 + cy * 0.029)) & 0xffff;
+    tmp.setHex(pickBiomeColor(avgH, seed));
+    for (let k = 0; k < 3; k++) {
+      faceColors.setXYZ(i + k, tmp.r, tmp.g, tmp.b);
+    }
+  }
+  flatGeo.setAttribute('color', faceColors);
+
+  const groundMat = new THREE.MeshPhongMaterial({
+    vertexColors: true,
+    flatShading: true,
+    shininess: 0,
+    specular: 0x000000,
+  });
+  const ground = new THREE.Mesh(flatGeo, groundMat);
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = WORLD.GROUND_Y;
   scene.add(ground);
