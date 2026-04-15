@@ -1,0 +1,140 @@
+import { buildBalloon, buildZeppelin } from './models.js';
+import { WORLD } from './config.js';
+import { terrainHeight } from './world.js';
+
+// Balloons and zeppelins duck-type Enemy so guns.update and main.js handle them
+// uniformly. Key fields: type, killValue, position, forward, yaw/pitch/roll,
+// hp, alive, dying, justExploded, firing, justFired, mesh, update(), startDying().
+
+export class Balloon {
+  constructor({ x, y, z }) {
+    this.type = 'balloon';
+    this.killValue = 1;
+    this.position = { x, y, z };
+    this.forward = { x: 0, y: 0, z: -1 };
+    this.yaw = Math.random() * Math.PI * 2;
+    this.pitch = 0;
+    this.roll = 0;
+    this.hp = 40;
+    this.speed = 0;
+    this.alive = true;
+    this.dying = false;
+    this.dyingTime = 0;
+    this.justExploded = false;
+    this.firing = false;
+    this.justFired = false;
+    this.lastShotHit = false;
+    this.mode = 'balloon';
+    this.variant = 'balloon';
+    this.mesh = buildBalloon();
+    this.mesh.rotation.order = 'YXZ';
+    this.mesh.position.set(x, y, z);
+    this.mesh.rotation.y = this.yaw;
+    this.swayT = Math.random() * Math.PI * 2;
+  }
+
+  startDying() {
+    this.dying = true;
+    this.dyingTime = 0;
+    this.alive = false;
+  }
+
+  update(dt, _player) {
+    this.justFired = false;
+    this.justExploded = false;
+    if (this.dying) {
+      // Balloons pop fast — hydrogen doesn't linger.
+      this.dyingTime += dt;
+      if (this.dyingTime > 0.25) {
+        this.justExploded = true;
+        this.dying = false;
+      }
+    } else {
+      this.swayT += dt * 0.6;
+      this.mesh.position.y = this.position.y + Math.sin(this.swayT) * 0.6;
+    }
+    this.mesh.position.x = this.position.x;
+    this.mesh.position.z = this.position.z;
+    if (this.dying) this.mesh.position.y = this.position.y;
+  }
+}
+
+export class Zeppelin {
+  constructor({ x, y, z }) {
+    this.type = 'zeppelin';
+    this.killValue = 5;
+    this.position = { x, y, z };
+    this.yaw = Math.random() * Math.PI * 2;
+    this.pitch = 0;
+    this.roll = 0;
+    this.forward = { x: -Math.sin(this.yaw), y: 0, z: -Math.cos(this.yaw) };
+    this.hp = 250;
+    this.speed = 6; // very slow patrol
+    this.alive = true;
+    this.dying = false;
+    this.dyingTime = 0;
+    this.justExploded = false;
+    this.firing = false;
+    this.justFired = false;
+    this.lastShotHit = false;
+    this.mode = 'zeppelin';
+    this.variant = 'zeppelin';
+    this.mesh = buildZeppelin();
+    this.mesh.rotation.order = 'YXZ';
+  }
+
+  startDying() {
+    this.dying = true;
+    this.dyingTime = 0;
+    this.alive = false;
+  }
+
+  update(dt, _player) {
+    this.justFired = false;
+    this.justExploded = false;
+
+    if (this.dying) {
+      // Slow, inexorable sink. Gentle pitch + roll, much slower than a plane.
+      this.dyingTime += dt;
+      this.pitch = Math.max(-0.25, this.pitch - 0.08 * dt);
+      this.roll += 0.18 * dt;
+      this.yaw += 0.3 * dt;
+      const cp = Math.cos(this.pitch);
+      const fx = -Math.sin(this.yaw) * cp;
+      const fy = Math.sin(this.pitch);
+      const fz = -Math.cos(this.yaw) * cp;
+      this.position.x += fx * 4 * dt;
+      this.position.y += fy * 4 * dt - 10 * dt;
+      this.position.z += fz * 4 * dt;
+      this.forward.x = fx; this.forward.y = fy; this.forward.z = fz;
+      const groundY = WORLD.GROUND_Y + terrainHeight(this.position.x, this.position.z);
+      if (this.position.y <= groundY + 6) {
+        this.position.y = groundY;
+        this.justExploded = true;
+        this.dying = false;
+      }
+    } else {
+      // Slow linear drift
+      const fx = -Math.sin(this.yaw);
+      const fz = -Math.cos(this.yaw);
+      this.position.x += fx * this.speed * dt;
+      this.position.z += fz * this.speed * dt;
+      this.forward.x = fx; this.forward.z = fz;
+      // Turn back toward origin if drifting too far
+      const r = Math.hypot(this.position.x, this.position.z);
+      if (r > 1400) {
+        const toCenter = Math.atan2(-this.position.x, -this.position.z);
+        let delta = toCenter - this.yaw;
+        delta = Math.atan2(Math.sin(delta), Math.cos(delta));
+        this.yaw += Math.sign(delta) * Math.min(Math.abs(delta), 0.12 * dt);
+      }
+    }
+
+    // Sync mesh — same +π yaw offset as planes so the nose faces forward,
+    // and negated pitch/roll to compensate for the flipped local axes.
+    this.mesh.position.set(this.position.x, this.position.y, this.position.z);
+    this.mesh.rotation.y = this.yaw + Math.PI;
+    this.mesh.rotation.x = -this.pitch;
+    this.mesh.rotation.z = this.roll;
+  }
+}

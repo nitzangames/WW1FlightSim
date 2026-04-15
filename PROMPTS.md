@@ -233,3 +233,9 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > also I shouldnt' be able to fly through the terrain. For the ballons and zepplin I want to choose from some mockups
 
 (→ terrain collision: if plane dips below the ground surface, crash instantly. Mockups: 3 balloon variants + 3 zeppelin variants as 3D renders in a new tools page; hold on implementing in-game until user picks.)
+
+## 44. Pick B2 + Z1
+
+> I think B2 and Z1 are the best
+
+(→ add buildBalloon (Caquot triple-fin) + buildZeppelin (classic LZ) to models.js, Balloon/Zeppelin classes in new targets.js, spawn 3 balloons + 1 zeppelin on game start, balloons pop on hit with fireball, zeppelin slowly sinks into the ground with spiral; spawner counts only planes; zeppelin kill is worth 5)

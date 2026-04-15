@@ -4,6 +4,8 @@ import { terrainHeight } from './world.js';
 
 export class Enemy {
   constructor({ x, y, z, mode = 'chaser', variant = 'a' }) {
+    this.type = 'plane';
+    this.killValue = 1;
     this.position = { x, y, z };
     this.yaw = 0;
     this.pitch = 0;

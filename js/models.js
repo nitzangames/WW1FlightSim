@@ -132,6 +132,91 @@ export function emitSmoke(pool, x, y, z, maxLife = 1.0) {
   slot.maxLife = maxLife;
 }
 
+// Caquot triple-fin observation balloon. Tether hangs ~280m below the basket.
+export function buildBalloon() {
+  const group = new THREE.Group();
+  const skin = new THREE.MeshLambertMaterial({ color: 0xc7b585 });
+  const dark = new THREE.MeshLambertMaterial({ color: 0x3a2a18 });
+  const cable = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+
+  // Gasbag
+  const bagGeo = new THREE.SphereGeometry(3.2, 16, 10);
+  bagGeo.scale(1, 1, 1.75);
+  const bag = new THREE.Mesh(bagGeo, skin);
+  group.add(bag);
+
+  // Three tail fins spaced 120° apart
+  const finGeo = new THREE.BoxGeometry(0.15, 2.8, 2.2);
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2;
+    const fin = new THREE.Mesh(finGeo, skin);
+    fin.position.set(Math.cos(a) * 1.6, Math.sin(a) * 1.6 - 0.6, -5.2);
+    fin.rotation.z = a + Math.PI / 2;
+    group.add(fin);
+  }
+
+  // Gondola basket
+  const basket = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.0, 1.6), dark);
+  basket.position.set(0, -4.2, 0);
+  group.add(basket);
+
+  // Long tether down to the ground. Length deliberately over-long — the
+  // terrain geometry hides whatever hangs below the surface.
+  const tetherLen = 280;
+  const c = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, tetherLen, 4), cable);
+  c.position.set(0, -4.2 - tetherLen / 2, 0);
+  group.add(c);
+
+  return group;
+}
+
+// Classic LZ-style rigid airship: tapered body, 4 cruciform fins, twin gondolas,
+// black iron cross on the side.
+export function buildZeppelin() {
+  const group = new THREE.Group();
+  const skin = new THREE.MeshLambertMaterial({ color: 0xb0a890 });
+  const dark = new THREE.MeshLambertMaterial({ color: 0x3a3024 });
+  const black = new THREE.MeshLambertMaterial({ color: 0x101010 });
+
+  // Body — elongated ellipsoid
+  const bodyGeo = new THREE.SphereGeometry(6.5, 22, 12);
+  bodyGeo.scale(1, 1, 6);
+  const body = new THREE.Mesh(bodyGeo, skin);
+  group.add(body);
+
+  // 4 cruciform tail fins
+  const finGeo = new THREE.BoxGeometry(0.35, 5.5, 5);
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2;
+    const fin = new THREE.Mesh(finGeo, skin);
+    fin.position.set(0, 0, -35);
+    fin.rotation.z = a;
+    group.add(fin);
+  }
+
+  // Twin gondolas underneath (fore + aft)
+  for (const z of [10, -14]) {
+    const gondola = new THREE.Mesh(new THREE.BoxGeometry(2.3, 1.8, 3.8), dark);
+    gondola.position.set(0, -6.6, z);
+    group.add(gondola);
+    const engine = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.3, 2.4), black);
+    engine.position.set(0, -8.2, z);
+    group.add(engine);
+  }
+
+  // Iron cross on the side of the hull (flat crossbars layered on the skin)
+  const crossBg = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 0.15), black);
+  crossBg.position.set(0, 1, 6.6);
+  crossBg.scale.set(1, 0.35, 1);
+  group.add(crossBg);
+  const crossV = new THREE.Mesh(new THREE.BoxGeometry(3, 0.16, 3), black);
+  crossV.position.set(0, 0, 6.6);
+  crossV.scale.set(0.33, 1, 1);
+  group.add(crossV);
+
+  return group;
+}
+
 // Simple scorch-mark pool: flat dark discs laid on the terrain where planes crash.
 export function createScorchPool(scene, size = 30) {
   const geo = new THREE.CircleGeometry(8, 20);

@@ -15,7 +15,11 @@ export class Spawner {
 
   maybeSpawn(enemies, player, kills) {
     const goal = targetCount(kills);
-    while (enemies.length < goal) {
+    // Only fighter planes count toward the cap — balloons/zeppelins are
+    // persistent bonus targets that shouldn't starve the wave spawner.
+    const planeCount = () => enemies.reduce(
+      (n, e) => n + ((e.type === 'plane' || !e.type) && e.alive && !e.dying ? 1 : 0), 0);
+    while (planeCount() < goal) {
       // Place the enemy on the far side of the playable map.
       // Direction from origin to player (bearing where the player currently is).
       let playerBearing;

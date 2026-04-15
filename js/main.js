@@ -10,6 +10,7 @@ import { Spawner } from './enemy-spawner.js';
 import { Enemy } from './enemy.js';
 import { Guns, EnemyTracers } from './weapons.js';
 import { ENEMY, WORLD } from './config.js';
+import { Balloon, Zeppelin } from './targets.js';
 import { GameState, STATE } from './game.js';
 import { initAudio, startEngine, stopEngine, setEnginePitch, playGunBurst, playHit, playKill } from './audio.js';
 
@@ -81,7 +82,30 @@ function resetGameObjects() {
   plane.position.x = 0; plane.position.y = 200; plane.position.z = 0;
   plane.pitch = 0; plane.roll = 0; plane.yaw = 0;
   plane.hp = 100; plane.alive = true; plane.damageFlash = 0;
+  plane.dying = false; plane.justCrashed = false;
   gs.reset();
+
+  // Static targets: 3 tethered balloons at 400-700m, low altitude; 1 zeppelin
+  // drifting at ~900m, above cruising altitude.
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2 + Math.random() * 0.8;
+    const r = 400 + Math.random() * 300;
+    const x = Math.sin(a) * r;
+    const z = Math.cos(a) * r;
+    const y = 70 + Math.random() * 40;
+    const balloon = new Balloon({ x, y, z });
+    enemies.push(balloon);
+    scene.add(balloon.mesh);
+  }
+  const za = Math.random() * Math.PI * 2;
+  const zr = 800 + Math.random() * 300;
+  const zep = new Zeppelin({
+    x: Math.sin(za) * zr,
+    y: 250 + Math.random() * 40,
+    z: Math.cos(za) * zr,
+  });
+  enemies.push(zep);
+  scene.add(zep.mesh);
 }
 
 // Apply plane orientation to camera
@@ -107,6 +131,8 @@ function computeWaypoint(enemies, pl, cam) {
   let bestD2 = Infinity;
   for (const e of enemies) {
     if (!e.alive || e.dying) continue;
+    // Waypoint points to planes — balloons/zeppelin are easy to spot already.
+    if (e.type && e.type !== 'plane') continue;
     const dx = e.position.x - pl.position.x;
     const dy = e.position.y - pl.position.y;
     const dz = e.position.z - pl.position.z;
@@ -183,7 +209,7 @@ function loop(t) {
     for (const e of enemies) {
       if (e.alive && e.hp <= 0 && !e.dying) {
         e.startDying();
-        gs.kills++;
+        gs.kills += e.killValue || 1;
         playKill();
         // Initial trail burst as the plane "catches fire"
         for (let i = 0; i < 4; i++) {
