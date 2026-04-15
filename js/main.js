@@ -6,6 +6,7 @@ import { Plane } from './plane.js';
 import { buildFokker, buildCockpit, createSmokePool, emitSmoke, updateSmoke } from './models.js';
 import { drawHud } from './hud.js';
 import { Spawner } from './enemy-spawner.js';
+import { Enemy } from './enemy.js';
 import { Guns } from './weapons.js';
 import { GameState, STATE } from './game.js';
 import { initAudio, startEngine, stopEngine, setEnginePitch, playGunBurst, playHit, playKill } from './audio.js';
@@ -96,6 +97,7 @@ let wasPlaying = false;
 
 let last = performance.now();
 function loop(t) {
+  if (paused) return;
   const dt = Math.min(0.05, (t - last) / 1000);
   last = t;
 
@@ -177,8 +179,36 @@ function loop(t) {
     player: plane,
     enemies,
   });
-  requestAnimationFrame(loop);
+  rafId = requestAnimationFrame(loop);
 }
-requestAnimationFrame(loop);
+let rafId = requestAnimationFrame(loop);
+let paused = false;
+
+if (window.PlaySDK) {
+  PlaySDK.onPause(() => {
+    paused = true;
+    cancelAnimationFrame(rafId);
+    import('./audio.js').then(m => m.suspendAudio());
+  });
+  PlaySDK.onResume(() => {
+    paused = false;
+    import('./audio.js').then(m => m.resumeAudio());
+    last = performance.now();
+    rafId = requestAnimationFrame(loop);
+  });
+}
+
+if (window.PlaySDK && PlaySDK.screenshotMode) {
+  resetGameObjects();
+  gs.startRun();
+  const e = new Enemy({
+    x: plane.position.x + 30,
+    y: plane.position.y + 5,
+    z: plane.position.z - 200,
+    mode: 'chaser',
+  });
+  enemies.push(e);
+  scene.add(e.mesh);
+}
 
 console.log('WW1 Flight Sim running', VERSION);
