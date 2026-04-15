@@ -459,7 +459,7 @@ test('release eases toward zero', () => {
   j.down(0, 0);
   j.move(200, 0); // x = 1
   j.up();
-  j.tick(1); // one tick
+  j.tick(0.2); // partial step: k = dt/releaseEase = 0.4, x lerps toward 0
   assert.ok(j.value().x < 1);
   assert.ok(j.value().x > 0);
 });

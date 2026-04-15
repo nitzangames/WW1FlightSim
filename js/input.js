@@ -27,6 +27,7 @@ export class Joystick {
     }
     let nx = dx / this.radius;
     let ny = dy / this.radius;
+    // Circular dead zone — compare 2D magnitude, not per-axis.
     const m = Math.hypot(nx, ny);
     if (m < this.deadZone) { nx = 0; ny = 0; }
     this.rawX = nx; this.rawY = ny;
