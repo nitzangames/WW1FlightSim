@@ -4,6 +4,7 @@ import { buildWorld } from './world.js';
 import { Joystick } from './input.js';
 import { Plane } from './plane.js';
 import { buildFokker, buildCockpit } from './models.js';
+import { Enemy } from './enemy.js';
 import { drawHud } from './hud.js';
 
 const gameCanvas = document.getElementById('game-canvas');
@@ -27,6 +28,12 @@ const planeMesh = buildFokker();
 planeMesh.visible = false; // hidden from cockpit — we're inside it
 planeMesh.rotation.order = 'YXZ';
 scene.add(planeMesh);
+
+// Test enemy
+const enemies = [];
+const e0 = new Enemy({ x: 0, y: 200, z: -400 });
+enemies.push(e0);
+scene.add(e0.mesh);
 
 // Joystick + input
 const joystick = new Joystick();
@@ -70,6 +77,7 @@ function loop(t) {
   joystick.tick(dt);
   plane.update(dt, joystick.value());
   syncCameraToPlane();
+  for (const e of enemies) e.update(dt, plane);
 
   renderer.render(scene, camera);
 

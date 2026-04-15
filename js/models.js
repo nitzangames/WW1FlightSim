@@ -72,3 +72,48 @@ export function buildCockpit() {
 
   return group;
 }
+
+export function buildBiplane() {
+  const group = new THREE.Group();
+  const khaki = new THREE.MeshLambertMaterial({ color: 0x8b824a });
+  const brown = new THREE.MeshLambertMaterial({ color: 0x5b4a2a });
+  const black = new THREE.MeshLambertMaterial({ color: 0x151515 });
+  const roundel = new THREE.MeshLambertMaterial({ color: 0x2a3c8a });
+
+  // Fuselage
+  const fuselage = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.8, 4.2), khaki);
+  group.add(fuselage);
+
+  // Cockpit
+  const cockpit = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 0.75), black);
+  cockpit.position.set(0, 0.4, 0.3);
+  group.add(cockpit);
+
+  // Two wings: upper and lower
+  const wingGeo = new THREE.BoxGeometry(5.5, 0.12, 1.0);
+  const wTop = new THREE.Mesh(wingGeo, khaki); wTop.position.set(0, 0.9, -0.2); group.add(wTop);
+  const wBot = new THREE.Mesh(wingGeo, khaki); wBot.position.set(0, -0.55, -0.3); group.add(wBot);
+
+  // Roundel discs on upper wing
+  for (const x of [-1.5, 1.5]) {
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.05, 12), roundel);
+    disc.rotation.x = Math.PI / 2;
+    disc.position.set(x, 0.97, -0.2);
+    group.add(disc);
+  }
+
+  // Struts
+  for (const x of [-2.2, 2.2]) {
+    const strut = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.4, 0.07), brown);
+    strut.position.set(x, 0.2, -0.25);
+    group.add(strut);
+  }
+
+  // Tail
+  const tailV = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.8, 0.7), khaki);
+  tailV.position.set(0, 0.35, -2.2); group.add(tailV);
+  const tailH = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.09, 0.6), khaki);
+  tailH.position.set(0, 0.05, -2.2); group.add(tailH);
+
+  return group;
+}
