@@ -209,3 +209,9 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > enemy planes start too close to me. They should start at the opposite edge of the map
 
 (→ rewrite spawner to place enemies ~1500-1700m from the center on a bearing opposite the player, so you have to fly to find them)
+
+## 40. Bring enemies closer + patrol waypoints
+
+> the enemeis are now too far away. It would be great if I could see way points for the patrol
+
+(→ pull spawn distance in to 700-1100m; add a HUD waypoint indicator that points toward the nearest alive enemy — bracket at screen position if visible, edge arrow + distance if off-screen or behind)

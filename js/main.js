@@ -100,6 +100,39 @@ function syncCameraToPlane() {
 let prevPlayerHp = plane.hp;
 let wasPlaying = false;
 
+const _waypointNDC = new THREE.Vector3();
+function computeWaypoint(enemies, pl, cam) {
+  let nearest = null;
+  let bestD2 = Infinity;
+  for (const e of enemies) {
+    if (!e.alive || e.dying) continue;
+    const dx = e.position.x - pl.position.x;
+    const dy = e.position.y - pl.position.y;
+    const dz = e.position.z - pl.position.z;
+    const d2 = dx * dx + dy * dy + dz * dz;
+    if (d2 < bestD2) { bestD2 = d2; nearest = e; }
+  }
+  if (!nearest) return null;
+  const dx = nearest.position.x - pl.position.x;
+  const dy = nearest.position.y - pl.position.y;
+  const dz = nearest.position.z - pl.position.z;
+  const front = dx * pl.forward.x + dy * pl.forward.y + dz * pl.forward.z > 0;
+  _waypointNDC.set(nearest.position.x, nearest.position.y, nearest.position.z);
+  _waypointNDC.project(cam);
+  const sx = (_waypointNDC.x * 0.5 + 0.5) * CANVAS_W;
+  const sy = (-_waypointNDC.y * 0.5 + 0.5) * CANVAS_H;
+  // Use camera-local x axis (right) to pick a side when behind.
+  // right = up × forward (left-handed convention matches the game's yaw).
+  const rx = 1 * pl.forward.z;  // (0,1,0) × forward.xyz → (forward.z, 0, -forward.x)
+  const rz = -pl.forward.x;
+  const localRight = dx * rx + dz * rz; // >0 = enemy on player's right
+  return {
+    sx, sy, front,
+    localRight,
+    distance: Math.sqrt(bestD2),
+  };
+}
+
 let last = performance.now();
 function loop(t) {
   if (paused) return;
@@ -246,6 +279,7 @@ function loop(t) {
     altitude: plane.position.y,
     rpmJitter: Math.sin(t * 0.01) * 0.5 + Math.sin(t * 0.017) * 0.3,
     gunFlash: guns.flashTimer,
+    waypoint: gs.state === STATE.PLAYING ? computeWaypoint(enemies, plane, camera) : null,
   });
   rafId = requestAnimationFrame(loop);
 }

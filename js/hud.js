@@ -92,6 +92,73 @@ function gunBreech(ctx, cx, cy, r, flash = 0) {
   }
 }
 
+function drawWaypoint(ctx, wp) {
+  const W = CANVAS_W, H = CANVAS_H;
+  const margin = 90;
+  const cx = W / 2, cy = H / 2;
+  const onScreen = wp.front && wp.sx >= margin && wp.sx <= W - margin && wp.sy >= margin && wp.sy <= H - margin;
+
+  ctx.save();
+  ctx.strokeStyle = '#ffd65a';
+  ctx.fillStyle = '#ffd65a';
+  ctx.lineWidth = 4;
+
+  if (onScreen) {
+    // Target bracket at the projected position.
+    const s = 44;
+    const x = wp.sx, y = wp.sy;
+    ctx.beginPath();
+    // Four corner brackets
+    const L = 18;
+    ctx.moveTo(x - s, y - s + L); ctx.lineTo(x - s, y - s); ctx.lineTo(x - s + L, y - s);
+    ctx.moveTo(x + s - L, y - s); ctx.lineTo(x + s, y - s); ctx.lineTo(x + s, y - s + L);
+    ctx.moveTo(x + s, y + s - L); ctx.lineTo(x + s, y + s); ctx.lineTo(x + s - L, y + s);
+    ctx.moveTo(x - s + L, y + s); ctx.lineTo(x - s, y + s); ctx.lineTo(x - s, y + s - L);
+    ctx.stroke();
+    ctx.font = 'bold 26px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${Math.round(wp.distance)}m`, x, y + s + 34);
+  } else {
+    // Edge arrow pointing toward the target. For behind-camera enemies pick a
+    // direction based on which side of the plane they're on.
+    let dx, dy;
+    if (wp.front) {
+      dx = wp.sx - cx;
+      dy = wp.sy - cy;
+    } else {
+      // Put the arrow at bottom edge, offset left/right by localRight sign.
+      dx = (wp.localRight >= 0 ? 1 : -1) * (W * 0.35);
+      dy = H * 0.38;
+    }
+    const mag = Math.hypot(dx, dy) || 1;
+    const r = Math.min(W, H) * 0.38;
+    const ax = cx + (dx / mag) * r;
+    const ay = cy + (dy / mag) * r;
+    const ang = Math.atan2(dy, dx);
+    // Triangle arrow
+    const size = 36;
+    ctx.translate(ax, ay);
+    ctx.rotate(ang);
+    ctx.beginPath();
+    ctx.moveTo(size, 0);
+    ctx.lineTo(-size * 0.6, -size * 0.7);
+    ctx.lineTo(-size * 0.2, 0);
+    ctx.lineTo(-size * 0.6, size * 0.7);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.rotate(-ang);
+    ctx.translate(-ax, -ay);
+    // Distance label inside the arrow direction
+    ctx.font = 'bold 24px sans-serif';
+    ctx.textAlign = 'center';
+    const lx = cx + (dx / mag) * (r - 56);
+    const ly = cy + (dy / mag) * (r - 56);
+    ctx.fillText(`${Math.round(wp.distance)}m`, lx, ly);
+  }
+  ctx.restore();
+}
+
 function drawCockpit(ctx, state) {
   const W = CANVAS_W, H = CANVAS_H;
   const dashH = H * 0.32;
@@ -171,6 +238,11 @@ export function drawHud(ctx, state) {
   ctx.moveTo(cx - 16, cy); ctx.lineTo(cx + 16, cy);
   ctx.moveTo(cx, cy - 16); ctx.lineTo(cx, cy + 16);
   ctx.stroke();
+
+  // Waypoint indicator for the nearest enemy
+  if (state.waypoint && !state.menu && !state.gameOver) {
+    drawWaypoint(ctx, state.waypoint);
+  }
 
   // Cockpit frame (covers lower ~32% of screen when PLAYING/GAMEOVER)
   if (state.player && !state.menu) {
