@@ -157,7 +157,10 @@ export class Enemy {
 
   syncMesh() {
     this.mesh.position.set(this.position.x, this.position.y, this.position.z);
-    this.mesh.rotation.y = this.yaw;
+    // Mesh is built with the propeller/nose at +Z; the game's forward vector
+    // points toward -Z at yaw=0. Rotate the mesh 180° so the nose faces
+    // along the direction of flight.
+    this.mesh.rotation.y = this.yaw + Math.PI;
     this.mesh.rotation.x = this.pitch;
     this.mesh.rotation.z = -this.roll;
   }

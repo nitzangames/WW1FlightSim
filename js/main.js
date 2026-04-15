@@ -89,7 +89,8 @@ function syncCameraToPlane() {
   camera.rotation.x = plane.pitch;
   camera.rotation.z = -plane.roll;
   planeMesh.position.copy(camera.position);
-  planeMesh.rotation.y = plane.yaw;
+  // Same +π offset as enemies so the mesh nose aligns with forward.
+  planeMesh.rotation.y = plane.yaw + Math.PI;
   planeMesh.rotation.x = plane.pitch;
   planeMesh.rotation.z = -plane.roll;
 }

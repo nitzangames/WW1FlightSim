@@ -181,3 +181,9 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > great. When a plane is hit, it would be great if it would spiral down to the ground and explode there.
 
 (→ downed enemies enter a "dying" state: nose-down yaw spin with heavy smoke trail, then explode with a particle burst when they hit the terrain)
+
+## 35. Enemy planes flying backwards
+
+> I think the enemy planes are flying backwards
+
+(→ rotate the mesh yaw by π so the propeller-nose aligns with the game's forward vector, which points toward -Z at yaw=0)
