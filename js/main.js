@@ -4,8 +4,8 @@ import { buildWorld } from './world.js';
 import { Joystick } from './input.js';
 import { Plane } from './plane.js';
 import { buildFokker, buildCockpit } from './models.js';
-import { Enemy } from './enemy.js';
 import { drawHud } from './hud.js';
+import { Spawner } from './enemy-spawner.js';
 
 const gameCanvas = document.getElementById('game-canvas');
 const overlayCanvas = document.getElementById('overlay-canvas');
@@ -29,20 +29,9 @@ planeMesh.visible = false; // hidden from cockpit — we're inside it
 planeMesh.rotation.order = 'YXZ';
 scene.add(planeMesh);
 
-// Test enemies
 const enemies = [];
-function spawnEnemy(mode, bearing, dist, altOffset) {
-  const x = plane.position.x + Math.sin(bearing) * dist;
-  const z = plane.position.z + Math.cos(bearing) * dist;
-  const y = plane.position.y + altOffset;
-  const e = new Enemy({ x, y, z, mode });
-  e.yaw = bearing + Math.PI; // face roughly toward origin
-  enemies.push(e);
-  scene.add(e.mesh);
-  return e;
-}
-spawnEnemy('chaser', 0.3, 500, 20);
-spawnEnemy('jouster', -0.6, 600, -10);
+const spawner = new Spawner(scene);
+let kills = 0;
 
 // Joystick + input
 const joystick = new Joystick();
@@ -87,6 +76,8 @@ function loop(t) {
   plane.update(dt, joystick.value());
   syncCameraToPlane();
   for (const e of enemies) e.update(dt, plane);
+  spawner.removeDead(enemies);
+  spawner.maybeSpawn(enemies, plane, kills);
 
   renderer.render(scene, camera);
 
