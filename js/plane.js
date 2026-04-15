@@ -11,6 +11,7 @@ export class Plane {
     this.smooth = smooth;
 
     this.position = { x: 0, y: 0, z: 0 };
+    this.forward = { x: 0, y: 0, z: -1 };
     this.pitch = 0;   // +up
     this.roll = 0;    // +right bank
     this.yaw = 0;     // +left turn (right-hand rule)
@@ -43,6 +44,8 @@ export class Plane {
     this.position.y += fy * this.speed * dt;
     this.position.z += fz * this.speed * dt;
 
-    this.forward = { x: fx, y: fy, z: fz };
+    this.forward.x = fx;
+    this.forward.y = fy;
+    this.forward.z = fz;
   }
 }
