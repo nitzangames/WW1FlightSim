@@ -1,0 +1,69 @@
+import { WORLD } from './config.js';
+
+// Transform world offset to radar-local: x right (+), y down (+). Radar "up" = player forward.
+// Player forward in world: (-sin(yaw), 0, -cos(yaw)); right: (cos(yaw), 0, -sin(yaw)).
+// radar.x = right projection; radar.y = -forward projection (canvas y flips).
+export function worldToRadar(player, enemy, radius, range) {
+  const dx = enemy.x - player.position.x;
+  const dz = enemy.z - player.position.z;
+  const cy = Math.cos(player.yaw);
+  const sy = Math.sin(player.yaw);
+  const rx = dx * cy - dz * sy;
+  const ry = dx * sy + dz * cy;
+  const scale = radius / range;
+  let x = rx * scale;
+  let y = ry * scale;
+  const mag = Math.hypot(x, y);
+  if (mag > radius) {
+    x = x * radius / mag;
+    y = y * radius / mag;
+  }
+  return { x, y };
+}
+
+export function drawMinimap(ctx, player, enemies, { cx, cy, radius }) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fillStyle = '#00000099';
+  ctx.fill();
+  ctx.strokeStyle = '#ffffff55';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Player icon — triangle pointing up
+  ctx.fillStyle = '#cfe6ff';
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - 10);
+  ctx.lineTo(cx - 7, cy + 7);
+  ctx.lineTo(cx + 7, cy + 7);
+  ctx.closePath();
+  ctx.fill();
+
+  // Enemy dots
+  for (const e of enemies) {
+    if (!e.alive) continue;
+    const p = worldToRadar(player, e.position, radius, 2000);
+    const altDelta = e.position.y - player.position.y;
+    const altScale = Math.max(0.5, Math.min(1.4, 1 - altDelta / 400));
+    ctx.fillStyle = '#ff4a4a';
+    ctx.beginPath();
+    ctx.arc(cx + p.x, cy + p.y, 6 * altScale, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Edge arrow if past soft return
+  const distXZ = Math.hypot(player.position.x, player.position.z);
+  if (distXZ > WORLD.RETURN_SOFT) {
+    const originLocal = worldToRadar(player, { x: 0, y: 0, z: 0 }, radius, 2000);
+    const mag = Math.hypot(originLocal.x, originLocal.y) || 1;
+    const ax = (originLocal.x / mag) * (radius - 8);
+    const ay = (originLocal.y / mag) * (radius - 8);
+    ctx.fillStyle = '#ffee88';
+    ctx.beginPath();
+    ctx.arc(cx + ax, cy + ay, 8, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}

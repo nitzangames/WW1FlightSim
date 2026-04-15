@@ -1,4 +1,5 @@
 import { CANVAS_W, CANVAS_H, VERSION, PLAYER } from './config.js';
+import { drawMinimap } from './minimap.js';
 
 export function drawHud(ctx, state) {
   ctx.save();
@@ -55,6 +56,22 @@ export function drawHud(ctx, state) {
     ctx.beginPath(); ctx.arc(ax, ay, radius, 0, Math.PI * 2); ctx.stroke();
     ctx.fillStyle = '#ffffffaa';
     ctx.beginPath(); ctx.arc(ax + x * radius, ay + y * radius, 28, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // Minimap
+  if (state.player) {
+    drawMinimap(ctx, state.player, state.enemies, {
+      cx: CANVAS_W - 200, cy: 200, radius: 180,
+    });
+
+    // Return-to-battle text
+    const d = Math.hypot(state.player.position.x, state.player.position.z);
+    if (d > 1800) {
+      ctx.fillStyle = '#ffee88';
+      ctx.font = 'bold 28px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('RETURN TO BATTLE', CANVAS_W / 2, 260);
+    }
   }
 
   // Game over

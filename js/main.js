@@ -107,6 +107,8 @@ function loop(t) {
     best: gs.best,
     gameOver: gs.state === STATE.GAMEOVER,
     joystick: { active: joystick.active, ax: joystick.ax, ay: joystick.ay, x: joystick.x, y: joystick.y, radius: joystick.radius },
+    player: plane,
+    enemies,
   });
   requestAnimationFrame(loop);
 }
