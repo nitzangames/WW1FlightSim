@@ -1,3 +1,7 @@
+import { GUN } from './config.js';
+
+const DEG = Math.PI / 180;
+
 export function inCone(self, forward, enemy, { angle, range }) {
   const dx = enemy.x - self.x;
   const dy = enemy.y - self.y;
@@ -33,10 +37,6 @@ export function leadTarget(shooter, target, bulletSpeed) {
   }
   return { x: target.x + vx * t, y: target.y + vy * t, z: target.z + vz * t, t };
 }
-
-import { GUN } from './config.js';
-
-const DEG = Math.PI / 180;
 
 export class Guns {
   constructor(scene, maxTracers = 60) {
