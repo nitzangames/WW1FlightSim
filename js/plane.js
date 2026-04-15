@@ -1,4 +1,4 @@
-import { PLAYER } from './config.js';
+import { PLAYER, WORLD } from './config.js';
 
 export class Plane {
   constructor({ speed = PLAYER.SPEED, pitchRateMax = PLAYER.PITCH_RATE_MAX,
@@ -32,6 +32,17 @@ export class Plane {
     // Bank-to-turn yaw
     const yawRate = -Math.sin(this.roll) * this.turnGain; // right bank → yaw right (negative)
     this.yaw += yawRate * dt;
+
+    // Drift-out recovery: gentle yaw toward origin when past soft radius
+    const distXZ = Math.hypot(this.position.x, this.position.z);
+    if (distXZ > WORLD.RETURN_SOFT) {
+      const angleToOrigin = Math.atan2(-this.position.x, -this.position.z);
+      let delta = angleToOrigin - this.yaw;
+      // Wrap to [-PI, PI]
+      delta = Math.atan2(Math.sin(delta), Math.cos(delta));
+      const pull = distXZ > WORLD.RETURN_HARD ? (15 * Math.PI / 180) : (5 * Math.PI / 180);
+      this.yaw += Math.sign(delta) * Math.min(Math.abs(delta), pull * dt);
+    }
 
     // Forward vector in world space: yaw first, then pitch. Start forward = (0,0,-1).
     const cp = Math.cos(this.pitch), sp = Math.sin(this.pitch);

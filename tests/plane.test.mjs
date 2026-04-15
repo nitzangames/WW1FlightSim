@@ -28,3 +28,19 @@ test('bank induces yaw', () => {
   for (let i = 0; i < 60; i++) p.update(1 / 60, { x: 1, y: 0 });
   assert.ok(p.yaw < yawBefore, `yaw should decrease (turn right): before ${yawBefore} after ${p.yaw}`);
 });
+
+test('drift recovery applies yaw bias when beyond soft radius', () => {
+  const p = new Plane();
+  p.position.x = 2000; p.position.z = 0; // past soft radius 1800
+  const yawBefore = p.yaw;
+  p.update(1, { x: 0, y: 0 });
+  assert.notEqual(p.yaw, yawBefore, 'yaw should change from recovery bias');
+});
+
+test('no recovery bias inside safe radius', () => {
+  const p = new Plane();
+  p.position.x = 100;
+  const yawBefore = p.yaw;
+  p.update(1, { x: 0, y: 0 });
+  assert.equal(p.yaw, yawBefore);
+});
