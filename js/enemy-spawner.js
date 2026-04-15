@@ -16,18 +16,36 @@ export class Spawner {
   maybeSpawn(enemies, player, kills) {
     const goal = targetCount(kills);
     while (enemies.length < goal) {
-      const bearing = Math.random() * Math.PI * 2;
-      const dist = SPAWN.SPAWN_MIN_DIST + Math.random() * (SPAWN.SPAWN_MAX_DIST - SPAWN.SPAWN_MIN_DIST);
+      // Place the enemy on the far side of the playable map.
+      // Direction from origin to player (bearing where the player currently is).
+      let playerBearing;
+      const pr = Math.hypot(player.position.x, player.position.z);
+      if (pr < 1) {
+        // Player at center — pick a random bearing; enemy goes anywhere on the rim.
+        playerBearing = Math.random() * Math.PI * 2;
+      } else {
+        playerBearing = Math.atan2(player.position.x, player.position.z);
+      }
+      // Spawn bearing is opposite to the player, with random spread.
+      const spread = (Math.random() * 2 - 1) * SPAWN.SPAWN_BEARING_SPREAD;
+      const bearing = playerBearing + Math.PI + spread;
+      const dist = SPAWN.SPAWN_EDGE_MIN + Math.random() * (SPAWN.SPAWN_EDGE_MAX - SPAWN.SPAWN_EDGE_MIN);
       const alt = (Math.random() * 2 - 1) * SPAWN.SPAWN_ALT_JITTER;
-      const x = player.position.x + Math.sin(bearing) * dist;
-      const z = player.position.z + Math.cos(bearing) * dist;
+      const x = Math.sin(bearing) * dist;
+      const z = Math.cos(bearing) * dist;
       const y = player.position.y + alt;
       const mode = Math.random() < 0.6 ? 'chaser' : 'jouster';
-      const e = new Enemy({ x, y, z, mode });
-      // Face the player on spawn. The spawn formula uses +sin/+cos of bearing,
-      // and forward at yaw=bearing is exactly -(sin, 0, cos) — i.e. pointing
-      // back toward the origin. (Previous `bearing + π` pointed them away.)
-      e.yaw = bearing;
+      // Variant ramp: default khaki always; olive 'b' unlocks at 5 kills; gold
+      // 'ace' is a rare (1-in-6) treat after 10 kills.
+      let variant = 'a';
+      const r = Math.random();
+      if (kills >= 10 && r < 0.17) variant = 'ace';
+      else if (kills >= 5 && r < 0.45) variant = 'b';
+      const e = new Enemy({ x, y, z, mode, variant });
+      // Yaw so the enemy is facing toward the player at spawn.
+      const dx = player.position.x - x;
+      const dz = player.position.z - z;
+      e.yaw = Math.atan2(-dx, -dz);
       enemies.push(e);
       this.scene.add(e.mesh);
     }

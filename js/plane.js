@@ -1,4 +1,5 @@
 import { PLAYER, WORLD } from './config.js';
+import { terrainHeight } from './world.js';
 
 export class Plane {
   constructor({ speed = PLAYER.SPEED, pitchRateMax = PLAYER.PITCH_RATE_MAX,
@@ -22,6 +23,46 @@ export class Plane {
     this.hp = PLAYER.HP;
     this.alive = true;
     this.damageFlash = 0;
+    // Death spiral state (mirrors Enemy behavior).
+    this.dying = false;
+    this.dyingTime = 0;
+    this.justCrashed = false; // one-frame pulse on ground impact
+  }
+
+  startDying() {
+    this.dying = true;
+    this.dyingTime = 0;
+    this.alive = false;
+  }
+
+  updateDying(dt) {
+    this.dyingTime += dt;
+    this.justCrashed = false;
+    // Spiral physics: lazier than enemies (pilot's "last ride").
+    this.yaw += 2.3 * dt;
+    this.pitch = Math.max(-1.15, this.pitch - 0.9 * dt);
+    this.roll += 3.0 * dt;
+    if (this.roll > Math.PI) this.roll -= Math.PI * 2;
+
+    const cp = Math.cos(this.pitch), sp = Math.sin(this.pitch);
+    const cy = Math.cos(this.yaw), sy = Math.sin(this.yaw);
+    const fx = -sy * cp;
+    const fy = sp;
+    const fz = -cy * cp;
+
+    const fallSpeed = this.speed * 0.75;
+    this.position.x += fx * fallSpeed * dt;
+    this.position.y += fy * fallSpeed * dt - 28 * dt;
+    this.position.z += fz * fallSpeed * dt;
+    this.forward.x = fx; this.forward.y = fy; this.forward.z = fz;
+
+    const groundY = WORLD.GROUND_Y + terrainHeight(this.position.x, this.position.z);
+    if (this.position.y <= groundY + 2) {
+      this.position.y = groundY;
+      this.justCrashed = true;
+      this.dying = false;
+    }
+    this.damageFlash = Math.max(this.damageFlash, 0.2);
   }
 
   update(dt, joystick) {

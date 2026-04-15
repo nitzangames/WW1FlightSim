@@ -197,3 +197,15 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 ## 37. Approval
 
 > looks good!
+
+## 38. Three follow-ups: player death spiral, ground scorch, enemy variety
+
+> lets do all 3. Lets wait on deploying.
+
+(→ mirror the enemy spiral for the player (no input during dying, camera dives with the plane, fade to game-over on impact); add a pooled scorch-mark disc on the terrain wherever an enemy explodes; add two more biplane variants (camel + gold "ace") with color/size/HP differences, spawner picks variant based on kill count)
+
+## 39. Enemy spawn at opposite edge of map
+
+> enemy planes start too close to me. They should start at the opposite edge of the map
+
+(→ rewrite spawner to place enemies ~1500-1700m from the center on a bearing opposite the player, so you have to fly to find them)

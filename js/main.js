@@ -3,12 +3,13 @@ import { createRenderer } from './renderer.js';
 import { buildWorld } from './world.js';
 import { Joystick } from './input.js';
 import { Plane } from './plane.js';
-import { buildFokker, buildCockpit, createSmokePool, emitSmoke, updateSmoke } from './models.js';
+import { buildFokker, buildCockpit, createSmokePool, emitSmoke, updateSmoke, createScorchPool, placeScorch } from './models.js';
+import { terrainHeight } from './world.js';
 import { drawHud } from './hud.js';
 import { Spawner } from './enemy-spawner.js';
 import { Enemy } from './enemy.js';
 import { Guns, EnemyTracers } from './weapons.js';
-import { ENEMY } from './config.js';
+import { ENEMY, WORLD } from './config.js';
 import { GameState, STATE } from './game.js';
 import { initAudio, startEngine, stopEngine, setEnginePitch, playGunBurst, playHit, playKill } from './audio.js';
 
@@ -40,6 +41,7 @@ const guns = new Guns(scene);
 const enemyTracers = new EnemyTracers(scene);
 
 const smokePool = createSmokePool(scene);
+const scorchPool = createScorchPool(scene);
 let smokeTimer = 0;
 
 const gs = new GameState();
@@ -115,7 +117,11 @@ function loop(t) {
   let gunState = null;
   if (isPlaying) {
     joystick.tick(dt);
-    plane.update(dt, joystick.value());
+    if (plane.dying) {
+      plane.updateDying(dt);
+    } else {
+      plane.update(dt, joystick.value());
+    }
     syncCameraToPlane();
     for (const e of enemies) e.update(dt, plane);
     // Spawn enemy tracers for every enemy that just fired. Miss rounds drift off
@@ -151,7 +157,7 @@ function loop(t) {
         }
       }
       if (e.justExploded) {
-        // Ground impact: big fireball of smoke + explosion sound.
+        // Ground impact: big fireball of smoke + explosion sound + scorch mark.
         playKill();
         for (let i = 0; i < 30; i++) {
           const ox = e.position.x + (Math.random() - 0.5) * 16;
@@ -159,6 +165,8 @@ function loop(t) {
           const oz = e.position.z + (Math.random() - 0.5) * 16;
           emitSmoke(smokePool, ox, oy, oz, 2.2);
         }
+        const gy = WORLD.GROUND_Y + terrainHeight(e.position.x, e.position.z);
+        placeScorch(scorchPool, e.position.x, gy, e.position.z, 1.0 + Math.random() * 0.4);
       }
     }
 
@@ -190,8 +198,29 @@ function loop(t) {
       }
     }
 
+    // Player downed → enter death spiral before the game-over screen.
     if (plane.hp <= 0 && plane.alive) {
-      plane.alive = false;
+      plane.startDying();
+      playKill();
+    }
+    // Continuous thick smoke trail from the dying plane.
+    if (plane.dying) {
+      emitSmoke(smokePool,
+        plane.position.x - plane.forward.x * 2,
+        plane.position.y - plane.forward.y * 2,
+        plane.position.z - plane.forward.z * 2,
+        1.6);
+    }
+    if (plane.justCrashed) {
+      // Impact fireball for the player plane too + scorch.
+      for (let i = 0; i < 40; i++) {
+        const ox = plane.position.x + (Math.random() - 0.5) * 18;
+        const oy = plane.position.y + Math.random() * 8;
+        const oz = plane.position.z + (Math.random() - 0.5) * 18;
+        emitSmoke(smokePool, ox, oy, oz, 2.4);
+      }
+      const gy = WORLD.GROUND_Y + terrainHeight(plane.position.x, plane.position.z);
+      placeScorch(scorchPool, plane.position.x, gy, plane.position.z, 1.4);
       gs.die();
     }
     setEnginePitch(80 + Math.abs(plane._targetPitchRate) * 80);

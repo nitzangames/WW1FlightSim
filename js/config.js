@@ -1,4 +1,4 @@
-export const VERSION = 'v0.2.3';
+export const VERSION = 'v0.3.0';
 
 export const CANVAS_W = 1080;
 export const CANVAS_H = 1920;
@@ -44,7 +44,9 @@ export const SPAWN = {
   START_COUNT: 2,
   CAP_COUNT: 4,
   KILLS_PER_RAMP: 5,
-  SPAWN_MIN_DIST: 200,
-  SPAWN_MAX_DIST: 350,
+  // Enemies spawn on the far side of the playable map from the player.
+  SPAWN_EDGE_MIN: 1500,  // meters from world origin
+  SPAWN_EDGE_MAX: 1700,
+  SPAWN_BEARING_SPREAD: Math.PI / 2.5, // random arc around "opposite" direction (~72°)
   SPAWN_ALT_JITTER: 60,
 };

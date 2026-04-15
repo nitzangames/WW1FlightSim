@@ -3,17 +3,21 @@ import { buildBiplane } from './models.js';
 import { terrainHeight } from './world.js';
 
 export class Enemy {
-  constructor({ x, y, z, mode = 'chaser' }) {
+  constructor({ x, y, z, mode = 'chaser', variant = 'a' }) {
     this.position = { x, y, z };
     this.yaw = 0;
     this.pitch = 0;
     this.roll = 0;
-    this.hp = ENEMY.HP;
-    this.speed = ENEMY.SPEED;
+    this.variant = variant;
+    const hpMult = variant === 'ace' ? 1.7 : 1.0;
+    const speedMult = variant === 'ace' ? 1.1 : 1.0;
+    this.hp = ENEMY.HP * hpMult;
+    this.speed = ENEMY.SPEED * speedMult;
     this.mode = mode;
     this.alive = true;
     this.forward = { x: 0, y: 0, z: -1 };
-    this.mesh = buildBiplane();
+    this.mesh = buildBiplane({ variant });
+    if (variant === 'ace') this.mesh.scale.setScalar(1.25);
     this.mesh.rotation.order = 'YXZ';
     this.firing = false;
     this.fireTimer = 0;

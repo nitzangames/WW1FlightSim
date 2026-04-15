@@ -132,6 +132,31 @@ export function emitSmoke(pool, x, y, z, maxLife = 1.0) {
   slot.maxLife = maxLife;
 }
 
+// Simple scorch-mark pool: flat dark discs laid on the terrain where planes crash.
+export function createScorchPool(scene, size = 30) {
+  const geo = new THREE.CircleGeometry(8, 20);
+  const mat = new THREE.MeshBasicMaterial({
+    color: 0x14100a, transparent: true, opacity: 0.72, side: THREE.DoubleSide, depthWrite: false,
+  });
+  const pool = { slots: [], next: 0 };
+  for (let i = 0; i < size; i++) {
+    const m = new THREE.Mesh(geo, mat);
+    m.rotation.x = -Math.PI / 2; // flat on the XZ ground plane
+    m.visible = false;
+    scene.add(m);
+    pool.slots.push(m);
+  }
+  return pool;
+}
+
+export function placeScorch(pool, x, y, z, scale = 1) {
+  const m = pool.slots[pool.next];
+  pool.next = (pool.next + 1) % pool.slots.length;
+  m.visible = true;
+  m.position.set(x, y + 0.2, z); // slight lift over terrain to avoid z-fighting
+  m.scale.setScalar(scale);
+}
+
 export function updateSmoke(pool, dt) {
   for (const s of pool) {
     if (!s.sprite.visible) continue;
@@ -143,46 +168,59 @@ export function updateSmoke(pool, dt) {
   }
 }
 
-export function buildBiplane() {
+const BIPLANE_PALETTES = {
+  a:   { body: 0x8b824a, strut: 0x5b4a2a, cockpit: 0x151515, roundel: 0x2a3c8a, nose: 0x8b824a },
+  b:   { body: 0x5a6a2a, strut: 0x3a2a18, cockpit: 0x151515, roundel: 0x9a2020, nose: 0x1a1a1a }, // Sopwith-ish olive + black nose
+  ace: { body: 0x101010, strut: 0x3a2810, cockpit: 0x1a1a1a, roundel: 0xd4af37, nose: 0xd4af37 }, // black with gold cowl & trim
+};
+
+export function buildBiplane({ variant = 'a' } = {}) {
   const group = new THREE.Group();
-  const khaki = new THREE.MeshLambertMaterial({ color: 0x8b824a });
-  const brown = new THREE.MeshLambertMaterial({ color: 0x5b4a2a });
-  const black = new THREE.MeshLambertMaterial({ color: 0x151515 });
-  const roundel = new THREE.MeshLambertMaterial({ color: 0x2a3c8a });
+  const p = BIPLANE_PALETTES[variant] || BIPLANE_PALETTES.a;
+  const body = new THREE.MeshLambertMaterial({ color: p.body });
+  const strutMat = new THREE.MeshLambertMaterial({ color: p.strut });
+  const cockpitMat = new THREE.MeshLambertMaterial({ color: p.cockpit });
+  const roundelMat = new THREE.MeshLambertMaterial({ color: p.roundel });
+  const noseMat = new THREE.MeshLambertMaterial({ color: p.nose });
+  const wheelMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
 
   // Fuselage
-  const fuselage = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.8, 4.2), khaki);
+  const fuselage = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.8, 4.2), body);
   group.add(fuselage);
 
+  // Engine cowl / nose (distinct color so variants read at a distance)
+  const nose = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.82, 0.5), noseMat);
+  nose.position.set(0, 0, 1.9);
+  group.add(nose);
+
   // Cockpit
-  const cockpit = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 0.75), black);
+  const cockpit = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 0.75), cockpitMat);
   cockpit.position.set(0, 0.4, 0.3);
   group.add(cockpit);
 
   // Two wings: upper and lower — pushed forward over the front half of the fuselage.
   const wingGeo = new THREE.BoxGeometry(5.5, 0.12, 1.0);
-  const wTop = new THREE.Mesh(wingGeo, khaki); wTop.position.set(0, 0.9, 0.5); group.add(wTop);
-  const wBot = new THREE.Mesh(wingGeo, khaki); wBot.position.set(0, -0.55, 0.4); group.add(wBot);
+  const wTop = new THREE.Mesh(wingGeo, body); wTop.position.set(0, 0.9, 0.5); group.add(wTop);
+  const wBot = new THREE.Mesh(wingGeo, body); wBot.position.set(0, -0.55, 0.4); group.add(wBot);
 
-  // Roundel discs on upper wing — default cylinder orientation (Y axis) lays
-  // the flat face horizontal, resting on the wing surface.
+  // Roundel discs on upper wing
   for (const x of [-1.5, 1.5]) {
-    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.05, 12), roundel);
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.05, 12), roundelMat);
     disc.position.set(x, 0.97, 0.5);
     group.add(disc);
   }
 
   // Struts
   for (const x of [-2.2, 2.2]) {
-    const strut = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.4, 0.07), brown);
+    const strut = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.4, 0.07), strutMat);
     strut.position.set(x, 0.2, 0.45);
     group.add(strut);
   }
 
   // Tail
-  const tailV = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.8, 0.7), khaki);
+  const tailV = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.8, 0.7), body);
   tailV.position.set(0, 0.35, -2.2); group.add(tailV);
-  const tailH = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.09, 0.6), khaki);
+  const tailH = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.09, 0.6), body);
   tailH.position.set(0, 0.05, -2.2); group.add(tailH);
 
   // Spinning-propeller disc at the nose.
@@ -196,14 +234,13 @@ export function buildBiplane() {
   group.add(propDisc);
 
   // Landing gear: twin wheels, horizontal axle, struts up to fuselage.
-  const wheelMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
   const wheelGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.12, 14);
   for (const wx of [-0.65, 0.65]) {
     const w = new THREE.Mesh(wheelGeo, wheelMat);
     w.rotation.z = Math.PI / 2;
     w.position.set(wx, -1.05, 0.4);
     group.add(w);
-    const strut = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.55, 0.06), brown);
+    const strut = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.55, 0.06), strutMat);
     strut.position.set(wx * 0.55, -0.75, 0.4);
     group.add(strut);
   }

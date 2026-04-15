@@ -20,14 +20,24 @@
 <p class="hint">Drag each model to rotate. Wheel to zoom. Auto-rotates slowly.</p>
 <div class="row">
   <div class="panel">
-    <canvas id="fokker" width="540" height="540"></canvas>
-    <div class="label">Fokker Dr.I — player (Red Baron)</div>
-    <div class="sub">Three stacked wings, all-red livery, black iron cross cockpit surround, wood struts, tail fin, propeller hub.</div>
+    <canvas id="fokker" width="440" height="440"></canvas>
+    <div class="label">Fokker Dr.I — player</div>
+    <div class="sub">Three stacked wings, all-red, black cockpit, wood struts, prop disc, landing gear.</div>
   </div>
   <div class="panel">
-    <canvas id="biplane" width="540" height="540"></canvas>
-    <div class="label">Allied biplane — enemy</div>
-    <div class="sub">Two wings, khaki fuselage, RAF blue roundel discs on upper wing, wood struts, tail fin.</div>
+    <canvas id="biplane-a" width="440" height="440"></canvas>
+    <div class="label">Enemy A — khaki</div>
+    <div class="sub">Default Allied biplane: khaki body, blue roundel, matching khaki nose.</div>
+  </div>
+  <div class="panel">
+    <canvas id="biplane-b" width="440" height="440"></canvas>
+    <div class="label">Enemy B — olive (spawns at 5 kills)</div>
+    <div class="sub">Olive drab with red roundel and blackened cowl.</div>
+  </div>
+  <div class="panel">
+    <canvas id="biplane-ace" width="440" height="440"></canvas>
+    <div class="label">Ace — gold (spawns rarely at 10+ kills)</div>
+    <div class="sub">Black fuselage with gold nose + gold roundel. Larger, tougher, faster.</div>
   </div>
 </div>
 
@@ -112,7 +122,11 @@ function setupViewer(canvas, model, baseScale = 1) {
 }
 
 setupViewer(document.getElementById('fokker'), buildFokker());
-setupViewer(document.getElementById('biplane'), buildBiplane());
+setupViewer(document.getElementById('biplane-a'), buildBiplane({ variant: 'a' }));
+setupViewer(document.getElementById('biplane-b'), buildBiplane({ variant: 'b' }));
+const aceModel = buildBiplane({ variant: 'ace' });
+aceModel.scale.setScalar(1.25);
+setupViewer(document.getElementById('biplane-ace'), aceModel);
 </script>
 </body>
 </html>
