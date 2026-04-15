@@ -169,3 +169,9 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > I think both models need to have the wings more forward. Also can you add a semi transparent thing cylinder to the front of each one to signify a spinning propellor?
 
 (→ shift wing/strut/roundel z-offsets forward by ~0.7 on both planes; add a semi-transparent disc at the nose of each to suggest a spinning prop)
+
+## 33. Roundels should be flat on wing
+
+> much better. The blue circles at the top of the biplane wing are rotated the wrong way, they need to e flat
+
+(→ remove the π/2 rotation on the roundel discs so the flat face rests on the wing)

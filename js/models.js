@@ -145,10 +145,10 @@ export function buildBiplane() {
   const wTop = new THREE.Mesh(wingGeo, khaki); wTop.position.set(0, 0.9, 0.5); group.add(wTop);
   const wBot = new THREE.Mesh(wingGeo, khaki); wBot.position.set(0, -0.55, 0.4); group.add(wBot);
 
-  // Roundel discs on upper wing (follow the wing forward)
+  // Roundel discs on upper wing — default cylinder orientation (Y axis) lays
+  // the flat face horizontal, resting on the wing surface.
   for (const x of [-1.5, 1.5]) {
     const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.05, 12), roundel);
-    disc.rotation.x = Math.PI / 2;
     disc.position.set(x, 0.97, 0.5);
     group.add(disc);
   }
