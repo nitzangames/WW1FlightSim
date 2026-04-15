@@ -8,6 +8,7 @@ import { drawHud } from './hud.js';
 import { Spawner } from './enemy-spawner.js';
 import { Guns } from './weapons.js';
 import { GameState, STATE } from './game.js';
+import { initAudio, startEngine, stopEngine, setEnginePitch, playGunBurst, playHit, playKill } from './audio.js';
 
 const gameCanvas = document.getElementById('game-canvas');
 const overlayCanvas = document.getElementById('overlay-canvas');
@@ -52,6 +53,7 @@ function screenToCanvas(clientX, clientY) {
   };
 }
 overlayCanvas.addEventListener('pointerdown', (e) => {
+  initAudio();
   if (gs.state === STATE.MENU) {
     resetGameObjects();
     gs.startRun();
@@ -89,6 +91,9 @@ function syncCameraToPlane() {
   planeMesh.rotation.z = -plane.roll;
 }
 
+let prevPlayerHp = plane.hp;
+let wasPlaying = false;
+
 let last = performance.now();
 function loop(t) {
   const dt = Math.min(0.05, (t - last) / 1000);
@@ -96,8 +101,13 @@ function loop(t) {
 
   updateSmoke(smokePool, dt);
 
+  const isPlaying = gs.state === STATE.PLAYING;
+  if (isPlaying && !wasPlaying) startEngine();
+  if (!isPlaying && wasPlaying) stopEngine();
+  wasPlaying = isPlaying;
+
   let gunState = null;
-  if (gs.state === STATE.PLAYING) {
+  if (isPlaying) {
     joystick.tick(dt);
     plane.update(dt, joystick.value());
     syncCameraToPlane();
@@ -105,6 +115,9 @@ function loop(t) {
     spawner.removeDead(enemies);
     spawner.maybeSpawn(enemies, plane, gs.kills);
     gunState = guns.update(dt, plane, enemies);
+    if (gunState.firing) playGunBurst();
+    if (plane.hp < prevPlayerHp) playHit();
+    prevPlayerHp = plane.hp;
 
     if (cockpit.userData.flash) {
       cockpit.userData.flash.material.opacity = Math.max(0, guns.flashTimer * 12);
@@ -114,6 +127,7 @@ function loop(t) {
       if (e.alive && e.hp <= 0) {
         e.alive = false;
         gs.kills++;
+        playKill();
         for (let i = 0; i < 10; i++) emitSmoke(smokePool, e.position.x, e.position.y, e.position.z, 1.2);
       }
     }
@@ -143,6 +157,7 @@ function loop(t) {
       plane.alive = false;
       gs.die();
     }
+    setEnginePitch(80 + Math.abs(plane._targetPitchRate) * 80);
   }
 
   if (gs.state === STATE.GAMEOVER) {
