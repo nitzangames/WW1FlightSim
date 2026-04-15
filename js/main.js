@@ -232,7 +232,18 @@ function loop(t) {
       }
     }
 
-    // Player downed → enter death spiral before the game-over screen.
+    // Terrain collision: hitting the ground while flying is an instant crash
+    // (skip the dying spiral — we're already at ground level).
+    if (plane.alive && !plane.dying) {
+      const groundY = WORLD.GROUND_Y + terrainHeight(plane.position.x, plane.position.z);
+      if (plane.position.y <= groundY + 3) {
+        plane.position.y = groundY;
+        plane.hp = 0;
+        plane.alive = false;
+        plane.justCrashed = true;
+      }
+    }
+    // Player shot down (HP gone but not from terrain) → enter death spiral.
     if (plane.hp <= 0 && plane.alive) {
       plane.startDying();
       playKill();

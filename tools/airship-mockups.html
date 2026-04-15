@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Balloon + Zeppelin mockups — WW1 Flight Sim</title>
+<style>
+  body { margin: 0; background: #1a1a1a; font-family: -apple-system, sans-serif; color: #ddd; padding: 20px; }
+  h1 { margin: 0 0 6px; }
+  h2 { margin: 28px 0 10px; font-size: 18px; opacity: 0.85; }
+  p.hint { opacity: 0.5; font-size: 13px; margin: 0 0 10px; }
+  .row { display: flex; gap: 18px; flex-wrap: wrap; }
+  .panel { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  canvas { background: #87a8c0; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  .label { font-size: 16px; font-weight: bold; }
+  .sub { font-size: 12px; opacity: 0.65; max-width: 400px; text-align: center; }
+</style>
+</head>
+<body>
+<h1>Airship mockups</h1>
+<p class="hint">Drag to rotate, wheel to zoom, double-click to toggle auto-rotate. Pick one balloon + one zeppelin.</p>
+
+<h2>Balloons (pick one)</h2>
+<div class="row">
+  <div class="panel"><canvas id="b1" width="380" height="380"></canvas>
+    <div class="label">B1 — Drachen (German sausage)</div>
+    <div class="sub">Elongated gasbag with fin-rigged tail, small gondola, long tether cable.</div>
+  </div>
+  <div class="panel"><canvas id="b2" width="380" height="380"></canvas>
+    <div class="label">B2 — Caquot (tripled fin)</div>
+    <div class="sub">Classic Allied kite balloon: 3 stabilizer fins at the rear, rope netting harness with a basket underneath.</div>
+  </div>
+  <div class="panel"><canvas id="b3" width="380" height="380"></canvas>
+    <div class="label">B3 — Spherical captive</div>
+    <div class="sub">Simple round hydrogen sphere, rope net, wicker gondola. Shortest and stubbiest.</div>
+  </div>
+</div>
+
+<h2>Zeppelins (pick one)</h2>
+<div class="row">
+  <div class="panel"><canvas id="z1" width="440" height="340"></canvas>
+    <div class="label">Z1 — Classic LZ</div>
+    <div class="sub">Long rigid airship, tapered nose + tail, 4 cruciform fins, twin gondola pods, black iron cross on the hull.</div>
+  </div>
+  <div class="panel"><canvas id="z2" width="440" height="340"></canvas>
+    <div class="label">Z2 — Super-Zeppelin (height-climber)</div>
+    <div class="sub">Longer and sleeker with 4 outboard engine gondolas plus a large command gondola. Silver hull, no cross.</div>
+  </div>
+  <div class="panel"><canvas id="z3" width="440" height="340"></canvas>
+    <div class="label">Z3 — Blimp-style (non-rigid)</div>
+    <div class="sub">Shorter, fatter body, single big gondola, rounded ends, darker canvas skin. Cheaper in-frame silhouette.</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script type="module">
+
+function bgSphere() {
+  const skyGeo = new THREE.SphereGeometry(100, 14, 10);
+  skyGeo.scale(-1, 1, 1);
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { top:{value:new THREE.Color(0x6fa6d6)}, bot:{value:new THREE.Color(0xfff1c9)} },
+    vertexShader: `varying float vY; void main(){ vY=normalize(position).y; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+    fragmentShader: `uniform vec3 top; uniform vec3 bot; varying float vY; void main(){ float t=clamp((vY+0.2)/1.0,0.0,1.0); gl_FragColor=vec4(mix(bot,top,t),1.0); }`,
+    side: THREE.BackSide, depthWrite: false,
+  });
+  return new THREE.Mesh(skyGeo, mat);
+}
+
+function viewer(canvas, model, initDist = 25) {
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  const scene = new THREE.Scene();
+  scene.add(bgSphere());
+  const camera = new THREE.PerspectiveCamera(42, canvas.width/canvas.height, 0.1, 500);
+  const sun = new THREE.DirectionalLight(0xfff0d0, 1.0);
+  sun.position.set(10, 18, 6);
+  scene.add(sun);
+  scene.add(new THREE.AmbientLight(0x556677, 0.6));
+  scene.add(model);
+  let yaw = 0.6, pitch = -0.12, dist = initDist, auto = true, dragging=false, lx=0, ly=0;
+  canvas.addEventListener('pointerdown', e => { dragging=true; auto=false; lx=e.clientX; ly=e.clientY; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', e => { if(!dragging) return; yaw += (e.clientX-lx)*0.01; pitch = Math.max(-1.4, Math.min(1.4, pitch + (e.clientY-ly)*0.01)); lx=e.clientX; ly=e.clientY; });
+  canvas.addEventListener('pointerup', () => dragging=false);
+  canvas.addEventListener('pointercancel', () => dragging=false);
+  canvas.addEventListener('wheel', e => { e.preventDefault(); dist = Math.max(6, Math.min(160, dist + e.deltaY*0.03)); }, { passive: false });
+  canvas.addEventListener('dblclick', () => auto = !auto);
+  function tick() {
+    if (auto) yaw += 0.0025;
+    camera.position.x = Math.sin(yaw)*Math.cos(pitch)*dist;
+    camera.position.y = Math.sin(-pitch)*dist + 1.5;
+    camera.position.z = Math.cos(yaw)*Math.cos(pitch)*dist;
+    camera.lookAt(0, 0, 0);
+    renderer.render(scene, camera);
+    requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+// ---------- BALLOONS ----------
+
+// B1: Drachen-style sausage balloon
+function balloonB1() {
+  const g = new THREE.Group();
+  const skin = new THREE.MeshLambertMaterial({ color: 0x9e8e4e });
+  const dark = new THREE.MeshLambertMaterial({ color: 0x3a2a18 });
+  const cable = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+  // Gasbag
+  const bag = new THREE.Mesh(new THREE.SphereGeometry(3, 16, 10), skin);
+  bag.scale.set(1, 1, 2.1);
+  g.add(bag);
+  // Fin-rigged tail (inflated pouches)
+  for (const [x, y] of [[0, 2], [0, -2], [2, 0], [-2, 0]]) {
+    const f = new THREE.Mesh(new THREE.SphereGeometry(0.9, 10, 8), skin);
+    f.position.set(x * 0.7, y * 0.7, -5.8);
+    g.add(f);
+  }
+  // Small gondola basket
+  const basket = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.8, 1.4), dark);
+  basket.position.set(0, -3.8, 0);
+  g.add(basket);
+  // Tether cable down
+  const c = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 18, 4), cable);
+  c.position.set(0, -13, 0);
+  g.add(c);
+  // Rigging lines (approximated with thin cylinders)
+  for (const x of [-1, 1]) {
+    const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.6, 4), cable);
+    rope.position.set(x * 0.55, -2, 0);
+    rope.rotation.z = x * 0.35;
+    g.add(rope);
+  }
+  return g;
+}
+
+// B2: Caquot (triple-fin Allied kite balloon)
+function balloonB2() {
+  const g = new THREE.Group();
+  const skin = new THREE.MeshLambertMaterial({ color: 0xc7b585 });
+  const dark = new THREE.MeshLambertMaterial({ color: 0x3a2a18 });
+  const cable = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+  // Gasbag — slightly shorter than B1
+  const bag = new THREE.Mesh(new THREE.SphereGeometry(3.2, 16, 10), skin);
+  bag.scale.set(1, 1, 1.75);
+  g.add(bag);
+  // Three tail fins spaced 120° apart
+  const finGeo = new THREE.BoxGeometry(0.15, 2.8, 2.2);
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2;
+    const fin = new THREE.Mesh(finGeo, skin);
+    fin.position.set(Math.cos(a) * 1.6, Math.sin(a) * 1.6 - 0.6, -5.2);
+    fin.rotation.z = a + Math.PI / 2;
+    g.add(fin);
+  }
+  // Netting (hint of lines over the top)
+  const netMat = new THREE.LineBasicMaterial({ color: 0x3a2818 });
+  for (let i = 0; i < 6; i++) {
+    const pts = [];
+    const a = (i / 6) * Math.PI * 2;
+    for (let t = 0; t <= 1; t += 0.1) {
+      const theta = t * Math.PI;
+      pts.push(new THREE.Vector3(Math.cos(theta) * Math.sin(a) * 3.2, Math.cos(theta) * Math.cos(a) * 3.2, Math.sin(theta) * 5.6 - 0));
+    }
+    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), netMat);
+    g.add(line);
+  }
+  // Basket
+  const basket = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.0, 1.6), dark);
+  basket.position.set(0, -4.2, 0);
+  g.add(basket);
+  // Tether
+  const c = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 18, 4), cable);
+  c.position.set(0, -13.4, 0);
+  g.add(c);
+  return g;
+}
+
+// B3: Simple spherical captive balloon
+function balloonB3() {
+  const g = new THREE.Group();
+  const skin = new THREE.MeshLambertMaterial({ color: 0xa6a6a6 });
+  const dark = new THREE.MeshLambertMaterial({ color: 0x3a2a18 });
+  const cable = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+  const bag = new THREE.Mesh(new THREE.SphereGeometry(3.6, 18, 14), skin);
+  g.add(bag);
+  // Wide wicker basket
+  const basket = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.0, 1.1, 10), dark);
+  basket.position.set(0, -4.5, 0);
+  g.add(basket);
+  // Rope net suggestion (4 ropes from basket rim to equator)
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2;
+    const r = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 3.5, 4), cable);
+    r.position.set(Math.cos(a) * 1.5, -2.4, Math.sin(a) * 1.5);
+    r.rotation.x = Math.cos(a) * 0.35;
+    r.rotation.z = Math.sin(a) * 0.35;
+    g.add(r);
+  }
+  // Tether
+  const c = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 20, 4), cable);
+  c.position.set(0, -14.5, 0);
+  g.add(c);
+  return g;
+}
+
+// ---------- ZEPPELINS ----------
+
+// Z1: Classic LZ rigid airship with twin gondolas and iron cross
+function zeppelinZ1() {
+  const g = new THREE.Group();
+  const skin = new THREE.MeshLambertMaterial({ color: 0xb0a890 });
+  const dark = new THREE.MeshLambertMaterial({ color: 0x3a3024 });
+  const black = new THREE.MeshLambertMaterial({ color: 0x101010 });
+  // Body: elongated sphere
+  const body = new THREE.Mesh(new THREE.SphereGeometry(6.5, 22, 12), skin);
+  body.scale.set(1, 1, 6);
+  g.add(body);
+  // 4 cruciform fins at the tail
+  const finGeo = new THREE.BoxGeometry(0.35, 5.5, 5);
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2;
+    const fin = new THREE.Mesh(finGeo, skin);
+    fin.position.set(0, 0, -35);
+    fin.rotation.z = a;
+    g.add(fin);
+  }
+  // Twin gondolas underneath
+  for (const z of [10, -14]) {
+    const gondola = new THREE.Mesh(new THREE.BoxGeometry(2.3, 1.8, 3.8), dark);
+    gondola.position.set(0, -6.6, z);
+    g.add(gondola);
+    const engine = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.3, 2.4), black);
+    engine.position.set(0, -8.2, z);
+    g.add(engine);
+  }
+  // Iron cross on the side (flat rectangles in a cross shape)
+  const crossBg = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 0.15), black);
+  crossBg.position.set(0, 1, 6.6);
+  crossBg.scale.set(1, 0.35, 1);
+  g.add(crossBg);
+  const crossV = new THREE.Mesh(new THREE.BoxGeometry(3, 0.16, 3), black);
+  crossV.position.set(0, 0, 6.6);
+  crossV.scale.set(0.33, 1, 1);
+  g.add(crossV);
+  return g;
+}
+
+// Z2: Super-Zeppelin — longer + 4 outboard engine gondolas
+function zeppelinZ2() {
+  const g = new THREE.Group();
+  const skin = new THREE.MeshLambertMaterial({ color: 0xd6d2c6 });
+  const dark = new THREE.MeshLambertMaterial({ color: 0x2a2620 });
+  const black = new THREE.MeshLambertMaterial({ color: 0x0a0a0a });
+  const body = new THREE.Mesh(new THREE.SphereGeometry(6, 24, 12), skin);
+  body.scale.set(1, 1, 7);
+  g.add(body);
+  // Cruciform fins
+  const finGeo = new THREE.BoxGeometry(0.35, 5.2, 4.6);
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2;
+    const fin = new THREE.Mesh(finGeo, skin);
+    fin.position.set(0, 0, -39);
+    fin.rotation.z = a;
+    g.add(fin);
+  }
+  // Large central command gondola
+  const cmd = new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.1, 7.5), dark);
+  cmd.position.set(0, -6.2, 5);
+  g.add(cmd);
+  // 4 outboard engine pods — 2 each side
+  for (const side of [-1, 1]) {
+    for (const z of [5, -18]) {
+      const pod = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.3, 3.2), black);
+      pod.position.set(side * 4.2, -3.2, z);
+      g.add(pod);
+      // Strut back to hull
+      const s = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.0, 0.25), dark);
+      s.position.set(side * 4.2, -2.1, z);
+      g.add(s);
+    }
+  }
+  return g;
+}
+
+// Z3: Blimp — shorter, fatter, single gondola
+function zeppelinZ3() {
+  const g = new THREE.Group();
+  const skin = new THREE.MeshLambertMaterial({ color: 0x7e705a });
+  const dark = new THREE.MeshLambertMaterial({ color: 0x2a2216 });
+  const body = new THREE.Mesh(new THREE.SphereGeometry(7.5, 22, 14), skin);
+  body.scale.set(1, 1, 3.5);
+  g.add(body);
+  // 4 tail fins
+  const finGeo = new THREE.BoxGeometry(0.3, 4.8, 3.8);
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2;
+    const fin = new THREE.Mesh(finGeo, skin);
+    fin.position.set(0, 0, -23);
+    fin.rotation.z = a;
+    g.add(fin);
+  }
+  // One big boxy gondola
+  const gondola = new THREE.Mesh(new THREE.BoxGeometry(3, 2.2, 10), dark);
+  gondola.position.set(0, -7.3, 0);
+  g.add(gondola);
+  // Two engine props on the gondola sides
+  for (const side of [-1, 1]) {
+    const engine = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 1.2, 8), dark);
+    engine.rotation.x = Math.PI / 2;
+    engine.position.set(side * 2, -7.3, -4.5);
+    g.add(engine);
+  }
+  return g;
+}
+
+viewer(document.getElementById('b1'), balloonB1(), 22);
+viewer(document.getElementById('b2'), balloonB2(), 22);
+viewer(document.getElementById('b3'), balloonB3(), 22);
+viewer(document.getElementById('z1'), zeppelinZ1(), 70);
+viewer(document.getElementById('z2'), zeppelinZ2(), 80);
+viewer(document.getElementById('z3'), zeppelinZ3(), 55);
+</script>
+</body>
+</html>

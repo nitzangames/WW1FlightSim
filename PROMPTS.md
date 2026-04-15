@@ -221,3 +221,15 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > its very good. What does the ASI gauge mean? When planes die I think they fall down tail first instead of propellor first
 
 (→ rename ASI gauge to SPD; fix the pitch/roll sign inversion on the plane mesh (the +π yaw offset was flipping the local X/Z axes so the mesh visually pitched opposite to the physics), so downed enemies now spiral nose-first)
+
+## 42. Balloons + zeppelin
+
+> looks great. Can we add some balloons to shoot down? Maybe a zepplin too!
+
+(→ add buildBalloon and buildZeppelin meshes, new Balloon/Zeppelin classes that duck-type Enemy (HP, alive, dying, justExploded, mesh, update). Balloons: tethered low-alt, gentle sway, pop with fireball. Zeppelin: huge slow-drifting airship, rare kill worth 5. Scatter 3 balloons + 1 zeppelin on game start. Spawner only tops off planes.)
+
+## 43. Terrain collision + airship mockups
+
+> also I shouldnt' be able to fly through the terrain. For the ballons and zepplin I want to choose from some mockups
+
+(→ terrain collision: if plane dips below the ground surface, crash instantly. Mockups: 3 balloon variants + 3 zeppelin variants as 3D renders in a new tools page; hold on implementing in-game until user picks.)
