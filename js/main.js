@@ -2,6 +2,8 @@ import { VERSION, CANVAS_W, CANVAS_H } from './config.js';
 import { createRenderer } from './renderer.js';
 import { buildWorld } from './world.js';
 import { Joystick } from './input.js';
+import { Plane } from './plane.js';
+import { buildFokker } from './models.js';
 
 const gameCanvas = document.getElementById('game-canvas');
 const overlayCanvas = document.getElementById('overlay-canvas');
@@ -12,19 +14,25 @@ overlayCanvas.height = CANVAS_H;
 
 const { renderer, scene, camera } = createRenderer(gameCanvas);
 buildWorld(scene);
-camera.position.set(0, 0, 0);
-camera.lookAt(0, 0, -100);
 
+// Player plane and its mesh
+const plane = new Plane();
+plane.position.y = 200;
+const planeMesh = buildFokker();
+planeMesh.visible = false; // hidden from cockpit — we're inside it
+scene.add(planeMesh);
+
+// Joystick + input
 const joystick = new Joystick();
-
+const octx = overlayCanvas.getContext('2d');
+overlayCanvas.style.pointerEvents = 'auto';
 function screenToCanvas(clientX, clientY) {
   const rect = overlayCanvas.getBoundingClientRect();
-  const sx = CANVAS_W / rect.width;
-  const sy = CANVAS_H / rect.height;
-  return { x: (clientX - rect.left) * sx, y: (clientY - rect.top) * sy };
+  return {
+    x: (clientX - rect.left) * (CANVAS_W / rect.width),
+    y: (clientY - rect.top) * (CANVAS_H / rect.height),
+  };
 }
-
-overlayCanvas.style.pointerEvents = 'auto';
 overlayCanvas.addEventListener('pointerdown', (e) => {
   const p = screenToCanvas(e.clientX, e.clientY);
   joystick.down(p.x, p.y);
@@ -36,7 +44,14 @@ overlayCanvas.addEventListener('pointermove', (e) => {
 overlayCanvas.addEventListener('pointerup', () => joystick.up());
 overlayCanvas.addEventListener('pointercancel', () => joystick.up());
 
-const octx = overlayCanvas.getContext('2d');
+// Apply plane orientation to camera
+function syncCameraToPlane() {
+  camera.position.set(plane.position.x, plane.position.y, plane.position.z);
+  camera.rotation.order = 'YXZ';
+  camera.rotation.y = plane.yaw;
+  camera.rotation.x = plane.pitch;
+  camera.rotation.z = -plane.roll;
+}
 
 let last = performance.now();
 function loop(t) {
@@ -44,6 +59,8 @@ function loop(t) {
   last = t;
 
   joystick.tick(dt);
+  plane.update(dt, joystick.value());
+  syncCameraToPlane();
 
   renderer.render(scene, camera);
 
