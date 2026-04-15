@@ -9,7 +9,6 @@ export function createRenderer(canvas) {
   scene.fog = new THREE.Fog(0xcfd8e0, WORLD.FOG_NEAR, WORLD.FOG_FAR);
 
   const camera = new THREE.PerspectiveCamera(75, CANVAS_W / CANVAS_H, 0.5, 5000);
-  camera.position.set(0, 0, 0);
 
   const sun = new THREE.DirectionalLight(0xfff0d0, 1.0);
   sun.position.set(200, 400, 100);
