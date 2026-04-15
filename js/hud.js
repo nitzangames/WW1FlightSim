@@ -74,6 +74,16 @@ export function drawHud(ctx, state) {
     }
   }
 
+  if (state.player) {
+    ctx.fillStyle = '#ffffff77';
+    ctx.font = '22px monospace';
+    ctx.textAlign = 'right';
+    const altM = Math.max(0, Math.round(state.player.position.y));
+    const spd = state.player.speed || 0;
+    ctx.fillText(`ALT ${altM}m`, CANVAS_W - 32, CANVAS_H - 90);
+    ctx.fillText(`SPD ${spd}m/s`, CANVAS_W - 32, CANVAS_H - 60);
+  }
+
   // Game over
   if (state.gameOver) {
     ctx.fillStyle = '#000000bb';

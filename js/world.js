@@ -46,5 +46,26 @@ export function buildWorld(scene) {
   ground.position.y = WORLD.GROUND_Y;
   scene.add(ground);
 
+  // Clouds: billboard sprites scattered
+  const cloudCanvas = document.createElement('canvas');
+  cloudCanvas.width = 128; cloudCanvas.height = 128;
+  const cctx = cloudCanvas.getContext('2d');
+  const grad = cctx.createRadialGradient(64, 64, 10, 64, 64, 64);
+  grad.addColorStop(0, 'rgba(255,255,255,0.85)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  cctx.fillStyle = grad; cctx.fillRect(0, 0, 128, 128);
+  const cloudTex = new THREE.CanvasTexture(cloudCanvas);
+  const cloudMat = new THREE.SpriteMaterial({ map: cloudTex, transparent: true, fog: true });
+
+  for (let i = 0; i < 25; i++) {
+    const s = new THREE.Sprite(cloudMat);
+    const a = Math.random() * Math.PI * 2;
+    const r = 200 + Math.random() * 1500;
+    s.position.set(Math.cos(a) * r, 150 + Math.random() * 350, Math.sin(a) * r);
+    const size = 60 + Math.random() * 120;
+    s.scale.set(size, size, size);
+    scene.add(s);
+  }
+
   return { ground };
 }
