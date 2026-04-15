@@ -38,10 +38,10 @@ export class Joystick {
   }
   tick(dt) {
     if (this.releasing) {
-      const factor = Math.pow(1 - this.releaseEase, dt);
-      this.x *= factor;
-      this.y *= factor;
-      if (Math.abs(this.x) < 0.001 && Math.abs(this.y) < 0.001) {
+      const k = Math.min(1, dt / this.releaseEase);
+      this.x += (0 - this.x) * k;
+      this.y += (0 - this.y) * k;
+      if (Math.abs(this.x) < 0.01 && Math.abs(this.y) < 0.01) {
         this.x = 0; this.y = 0; this.releasing = false;
       }
     }
