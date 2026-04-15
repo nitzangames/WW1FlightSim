@@ -39,7 +39,6 @@ const smokePool = createSmokePool(scene);
 let smokeTimer = 0;
 
 const gs = new GameState();
-gs.startRun(); // Task 19 will introduce the actual menu flow
 
 // Joystick + input
 const joystick = new Joystick();
@@ -53,6 +52,12 @@ function screenToCanvas(clientX, clientY) {
   };
 }
 overlayCanvas.addEventListener('pointerdown', (e) => {
+  if (gs.state === STATE.MENU) {
+    resetGameObjects();
+    gs.startRun();
+  } else if (gs.state === STATE.GAMEOVER && gs.gameOverTimer <= 0) {
+    gs.state = STATE.MENU;
+  }
   const p = screenToCanvas(e.clientX, e.clientY);
   joystick.down(p.x, p.y);
 });
@@ -62,6 +67,15 @@ overlayCanvas.addEventListener('pointermove', (e) => {
 });
 overlayCanvas.addEventListener('pointerup', () => joystick.up());
 overlayCanvas.addEventListener('pointercancel', () => joystick.up());
+
+function resetGameObjects() {
+  for (const e of enemies) scene.remove(e.mesh);
+  enemies.length = 0;
+  plane.position.x = 0; plane.position.y = 200; plane.position.z = 0;
+  plane.pitch = 0; plane.roll = 0; plane.yaw = 0;
+  plane.hp = 100; plane.alive = true; plane.damageFlash = 0;
+  gs.reset();
+}
 
 // Apply plane orientation to camera
 function syncCameraToPlane() {
@@ -131,6 +145,10 @@ function loop(t) {
     }
   }
 
+  if (gs.state === STATE.GAMEOVER) {
+    gs.gameOverTimer = Math.max(0, gs.gameOverTimer - dt);
+  }
+
   renderer.render(scene, camera);
   drawHud(octx, {
     locked: !!(gunState && gunState.target),
@@ -139,6 +157,7 @@ function loop(t) {
     kills: gs.kills,
     best: gs.best,
     gameOver: gs.state === STATE.GAMEOVER,
+    menu: gs.state === STATE.MENU,
     joystick: { active: joystick.active, ax: joystick.ax, ay: joystick.ay, x: joystick.x, y: joystick.y, radius: joystick.radius },
     player: plane,
     enemies,

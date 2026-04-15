@@ -103,6 +103,24 @@ export function drawHud(ctx, state) {
     ctx.fillText('TAP TO FLY AGAIN', CANVAS_W / 2, CANVAS_H / 2 + 160);
   }
 
+  if (state.menu) {
+    ctx.fillStyle = '#000000dd';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    ctx.fillStyle = '#ffd65a';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 110px serif';
+    ctx.fillText('WW1', CANVAS_W / 2, CANVAS_H / 2 - 180);
+    ctx.font = 'bold 88px serif';
+    ctx.fillStyle = '#ffeded';
+    ctx.fillText('FLIGHT SIM', CANVAS_W / 2, CANVAS_H / 2 - 80);
+    ctx.font = '36px sans-serif';
+    ctx.fillStyle = '#ffffffcc';
+    ctx.fillText('TAP TO FLY', CANVAS_W / 2, CANVAS_H / 2 + 60);
+    ctx.font = '28px sans-serif';
+    ctx.fillStyle = '#ffffff99';
+    ctx.fillText(`BEST ${state.best}`, CANVAS_W / 2, CANVAS_H / 2 + 140);
+  }
+
   // Version bottom-center
   ctx.fillStyle = '#ffffff55';
   ctx.font = '16px sans-serif';
