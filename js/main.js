@@ -77,6 +77,7 @@ function loop(t) {
   const dt = Math.min(0.05, (t - last) / 1000);
   last = t;
 
+  let gunState = null;
   if (gs.state === STATE.PLAYING) {
     joystick.tick(dt);
     plane.update(dt, joystick.value());
@@ -84,7 +85,7 @@ function loop(t) {
     for (const e of enemies) e.update(dt, plane);
     spawner.removeDead(enemies);
     spawner.maybeSpawn(enemies, plane, gs.kills);
-    const gunState = guns.update(dt, plane, enemies);
+    gunState = guns.update(dt, plane, enemies);
     for (const e of enemies) {
       if (e.alive && e.hp <= 0) {
         e.alive = false;
@@ -95,18 +96,18 @@ function loop(t) {
       plane.alive = false;
       gs.die();
     }
-    drawHud(octx, {
-      locked: !!gunState.target,
-      joystick: { active: joystick.active, ax: joystick.ax, ay: joystick.ay, x: joystick.x, y: joystick.y, radius: joystick.radius },
-    });
-  } else {
-    drawHud(octx, {
-      locked: false,
-      joystick: { active: joystick.active, ax: joystick.ax, ay: joystick.ay, x: joystick.x, y: joystick.y, radius: joystick.radius },
-    });
   }
 
   renderer.render(scene, camera);
+  drawHud(octx, {
+    locked: !!(gunState && gunState.target),
+    damageFlash: plane.damageFlash,
+    hp: plane.hp,
+    kills: gs.kills,
+    best: gs.best,
+    gameOver: gs.state === STATE.GAMEOVER,
+    joystick: { active: joystick.active, ax: joystick.ax, ay: joystick.ay, x: joystick.x, y: joystick.y, radius: joystick.radius },
+  });
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
