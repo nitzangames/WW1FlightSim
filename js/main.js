@@ -91,10 +91,11 @@ function syncCameraToPlane() {
   camera.rotation.x = plane.pitch;
   camera.rotation.z = -plane.roll;
   planeMesh.position.copy(camera.position);
-  // Same +π offset as enemies so the mesh nose aligns with forward.
+  // Same +π offset as enemies so the mesh nose aligns with forward. Pitch and
+  // roll are inverted because the π yaw flips the mesh's local X/Z axes.
   planeMesh.rotation.y = plane.yaw + Math.PI;
-  planeMesh.rotation.x = plane.pitch;
-  planeMesh.rotation.z = -plane.roll;
+  planeMesh.rotation.x = -plane.pitch;
+  planeMesh.rotation.z = plane.roll;
 }
 
 let prevPlayerHp = plane.hp;

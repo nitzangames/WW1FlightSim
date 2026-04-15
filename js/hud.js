@@ -181,7 +181,7 @@ function drawCockpit(ctx, state) {
   const asi = Math.max(0, Math.min(200, (state.speed || 0) * 1.5));
   const alt = Math.max(0, Math.min(200, (state.altitude || 0) * 0.5));
   const rpm = 120 + (state.rpmJitter || 0) * 20;
-  drawGauge(ctx, W * 0.18, gaugeY, 90, 'ASI', asi);
+  drawGauge(ctx, W * 0.18, gaugeY, 90, 'SPD', asi);
   drawGauge(ctx, W * 0.5,  gaugeY, 115, 'ALT', alt);
   drawGauge(ctx, W * 0.82, gaugeY, 90, 'RPM', rpm);
 

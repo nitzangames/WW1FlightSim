@@ -162,10 +162,12 @@ export class Enemy {
   syncMesh() {
     this.mesh.position.set(this.position.x, this.position.y, this.position.z);
     // Mesh is built with the propeller/nose at +Z; the game's forward vector
-    // points toward -Z at yaw=0. Rotate the mesh 180° so the nose faces
-    // along the direction of flight.
+    // points toward -Z at yaw=0. Rotate the mesh 180° so the nose faces along
+    // the direction of flight. That π yaw offset also flips the mesh's local
+    // X and Z axes, so pitch and roll must be applied with inverted signs or
+    // the mesh ends up pointing opposite to the physics during dives/banks.
     this.mesh.rotation.y = this.yaw + Math.PI;
-    this.mesh.rotation.x = this.pitch;
-    this.mesh.rotation.z = -this.roll;
+    this.mesh.rotation.x = -this.pitch;
+    this.mesh.rotation.z = this.roll;
   }
 }

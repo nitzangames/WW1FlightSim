@@ -215,3 +215,9 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > the enemeis are now too far away. It would be great if I could see way points for the patrol
 
 (→ pull spawn distance in to 700-1100m; add a HUD waypoint indicator that points toward the nearest alive enemy — bracket at screen position if visible, edge arrow + distance if off-screen or behind)
+
+## 41. ASI label + tail-first death
+
+> its very good. What does the ASI gauge mean? When planes die I think they fall down tail first instead of propellor first
+
+(→ rename ASI gauge to SPD; fix the pitch/roll sign inversion on the plane mesh (the +π yaw offset was flipping the local X/Z axes so the mesh visually pitched opposite to the physics), so downed enemies now spiral nose-first)
