@@ -1,6 +1,7 @@
 import { CANVAS_W, CANVAS_H, VERSION } from './config.js';
 
 export function drawHud(ctx, state) {
+  ctx.save();
   ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
 
   // Crosshair (center)
@@ -34,4 +35,5 @@ export function drawHud(ctx, state) {
   ctx.font = '18px sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText(VERSION, CANVAS_W / 2, CANVAS_H - 16);
+  ctx.restore();
 }
