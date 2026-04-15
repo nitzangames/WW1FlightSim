@@ -14,18 +14,19 @@ export function buildFokker() {
   cockpit.position.set(0, 0.5, 0.3);
   group.add(cockpit);
 
-  // Three stacked wings (triplane): top, middle, bottom
+  // Three stacked wings (triplane): top, middle, bottom — pushed forward
+  // so they sit over the pilot's cockpit / forward half of the fuselage.
   const wingGeo = new THREE.BoxGeometry(6.0, 0.15, 1.1);
-  const wTop = new THREE.Mesh(wingGeo, red); wTop.position.set(0, 1.1, -0.2); group.add(wTop);
-  const wMid = new THREE.Mesh(wingGeo, red); wMid.position.set(0, 0.2, -0.4); group.add(wMid);
-  const wBot = new THREE.Mesh(wingGeo, red); wBot.position.set(0, -0.7, -0.4); group.add(wBot);
+  const wTop = new THREE.Mesh(wingGeo, red); wTop.position.set(0, 1.1, 0.5); group.add(wTop);
+  const wMid = new THREE.Mesh(wingGeo, red); wMid.position.set(0, 0.2, 0.3); group.add(wMid);
+  const wBot = new THREE.Mesh(wingGeo, red); wBot.position.set(0, -0.7, 0.3); group.add(wBot);
 
-  // Vertical struts
+  // Vertical struts (follow the wings forward)
   for (const x of [-2.5, 2.5]) {
     const strutTop = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.9, 0.08), wood);
-    strutTop.position.set(x, 0.65, -0.3); group.add(strutTop);
+    strutTop.position.set(x, 0.65, 0.4); group.add(strutTop);
     const strutBot = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.9, 0.08), wood);
-    strutBot.position.set(x, -0.25, -0.4); group.add(strutBot);
+    strutBot.position.set(x, -0.25, 0.3); group.add(strutBot);
   }
 
   // Tail
@@ -39,6 +40,16 @@ export function buildFokker() {
   hub.rotation.x = Math.PI / 2;
   hub.position.set(0, 0, 2.0);
   group.add(hub);
+
+  // Spinning-propeller disc — semi-transparent faint gray, flat perpendicular to nose.
+  const propDiscGeo = new THREE.CylinderGeometry(0.85, 0.85, 0.04, 20);
+  const propDiscMat = new THREE.MeshBasicMaterial({
+    color: 0xdcdcdc, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false,
+  });
+  const propDisc = new THREE.Mesh(propDiscGeo, propDiscMat);
+  propDisc.rotation.x = Math.PI / 2;
+  propDisc.position.set(0, 0, 2.12);
+  group.add(propDisc);
 
   return group;
 }
@@ -129,23 +140,23 @@ export function buildBiplane() {
   cockpit.position.set(0, 0.4, 0.3);
   group.add(cockpit);
 
-  // Two wings: upper and lower
+  // Two wings: upper and lower — pushed forward over the front half of the fuselage.
   const wingGeo = new THREE.BoxGeometry(5.5, 0.12, 1.0);
-  const wTop = new THREE.Mesh(wingGeo, khaki); wTop.position.set(0, 0.9, -0.2); group.add(wTop);
-  const wBot = new THREE.Mesh(wingGeo, khaki); wBot.position.set(0, -0.55, -0.3); group.add(wBot);
+  const wTop = new THREE.Mesh(wingGeo, khaki); wTop.position.set(0, 0.9, 0.5); group.add(wTop);
+  const wBot = new THREE.Mesh(wingGeo, khaki); wBot.position.set(0, -0.55, 0.4); group.add(wBot);
 
-  // Roundel discs on upper wing
+  // Roundel discs on upper wing (follow the wing forward)
   for (const x of [-1.5, 1.5]) {
     const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.05, 12), roundel);
     disc.rotation.x = Math.PI / 2;
-    disc.position.set(x, 0.97, -0.2);
+    disc.position.set(x, 0.97, 0.5);
     group.add(disc);
   }
 
   // Struts
   for (const x of [-2.2, 2.2]) {
     const strut = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.4, 0.07), brown);
-    strut.position.set(x, 0.2, -0.25);
+    strut.position.set(x, 0.2, 0.45);
     group.add(strut);
   }
 
@@ -154,6 +165,16 @@ export function buildBiplane() {
   tailV.position.set(0, 0.35, -2.2); group.add(tailV);
   const tailH = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.09, 0.6), khaki);
   tailH.position.set(0, 0.05, -2.2); group.add(tailH);
+
+  // Spinning-propeller disc at the nose.
+  const propDiscGeo = new THREE.CylinderGeometry(0.75, 0.75, 0.04, 20);
+  const propDiscMat = new THREE.MeshBasicMaterial({
+    color: 0xdcdcdc, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false,
+  });
+  const propDisc = new THREE.Mesh(propDiscGeo, propDiscMat);
+  propDisc.rotation.x = Math.PI / 2;
+  propDisc.position.set(0, 0, 2.22);
+  group.add(propDisc);
 
   return group;
 }

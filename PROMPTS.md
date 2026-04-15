@@ -163,3 +163,9 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > show me the plane models in a localhost, also the enemies move way too fast, slow everything down by a lot
 
 (→ build tools/plane-models.html to render Fokker + Allied biplane side-by-side with slow rotation; cut player/enemy speed and turn rates roughly in half)
+
+## 32. Wings forward + spinning propeller disc
+
+> I think both models need to have the wings more forward. Also can you add a semi transparent thing cylinder to the front of each one to signify a spinning propellor?
+
+(→ shift wing/strut/roundel z-offsets forward by ~0.7 on both planes; add a semi-transparent disc at the nose of each to suggest a spinning prop)
