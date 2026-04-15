@@ -1,27 +1,27 @@
-export const VERSION = 'v0.2.1';
+export const VERSION = 'v0.2.2';
 
 export const CANVAS_W = 1080;
 export const CANVAS_H = 1920;
 
 export const PLAYER = {
   HP: 100,
-  SPEED: 80,             // m/s forward
-  PITCH_RATE_MAX: 1.4,   // rad/s at full joystick
+  SPEED: 35,             // m/s forward — lazy WW1-pace cruise
+  PITCH_RATE_MAX: 0.9,   // rad/s at full joystick
   ROLL_ANGLE_MAX: Math.PI / 3,   // 60 deg
-  TURN_GAIN: 1.2,        // yaw rate = sin(roll) * gain
+  TURN_GAIN: 0.9,        // yaw rate = sin(roll) * gain
   SMOOTH: 0.1,
 };
 
 export const ENEMY = {
   HP: 60,
-  SPEED: 88,             // slightly faster than player so they can actually close
-  TURN_CAP: Math.PI * 28 / 180,  // 28 deg/s — still looser than original 40, but can engage
+  SPEED: 40,             // slightly faster than player so they can close
+  TURN_CAP: Math.PI * 22 / 180,  // 22 deg/s
   FIRE_CONE_DEG: 10,
-  FIRE_RANGE: 350,
-  FIRE_INTERVAL: 0.15,   // seconds between enemy shots
-  DAMAGE_PER_HIT: 0.9,   // hp per bullet that connects
-  HIT_CHANCE: 0.55,      // fraction of fired bullets that actually hit (rest visibly miss)
-  TRACER_SPREAD_DEG: 4,  // random visual spread on enemy tracers
+  FIRE_RANGE: 320,
+  FIRE_INTERVAL: 0.2,    // seconds between enemy shots (slower cadence to match slower pace)
+  DAMAGE_PER_HIT: 0.9,
+  HIT_CHANCE: 0.55,
+  TRACER_SPREAD_DEG: 4,
 };
 
 export const GUN = {
@@ -44,7 +44,7 @@ export const SPAWN = {
   START_COUNT: 2,
   CAP_COUNT: 4,
   KILLS_PER_RAMP: 5,
-  SPAWN_MIN_DIST: 350,
-  SPAWN_MAX_DIST: 550,
-  SPAWN_ALT_JITTER: 100,
+  SPAWN_MIN_DIST: 200,
+  SPAWN_MAX_DIST: 350,
+  SPAWN_ALT_JITTER: 60,
 };

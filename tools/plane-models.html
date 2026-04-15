@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Plane models — WW1 Flight Sim</title>
+<style>
+  body { margin: 0; background: #1a1a1a; font-family: -apple-system, sans-serif; color: #ddd; padding: 20px; }
+  h1 { margin: 0 0 20px; }
+  .row { display: flex; gap: 20px; flex-wrap: wrap; }
+  .panel { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  canvas { background: #87a8c0; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  .label { font-size: 18px; font-weight: bold; }
+  .sub { font-size: 13px; opacity: 0.65; max-width: 520px; text-align: center; }
+  .hint { opacity: 0.5; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>Plane models</h1>
+<p class="hint">Drag each model to rotate. Wheel to zoom. Auto-rotates slowly.</p>
+<div class="row">
+  <div class="panel">
+    <canvas id="fokker" width="540" height="540"></canvas>
+    <div class="label">Fokker Dr.I — player (Red Baron)</div>
+    <div class="sub">Three stacked wings, all-red livery, black iron cross cockpit surround, wood struts, tail fin, propeller hub.</div>
+  </div>
+  <div class="panel">
+    <canvas id="biplane" width="540" height="540"></canvas>
+    <div class="label">Allied biplane — enemy</div>
+    <div class="sub">Two wings, khaki fuselage, RAF blue roundel discs on upper wing, wood struts, tail fin.</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script type="module">
+import { buildFokker, buildBiplane } from '../js/models.js';
+
+function setupViewer(canvas, model, baseScale = 1) {
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  renderer.setClearColor(0x87a8c0);
+
+  const scene = new THREE.Scene();
+  scene.background = null;
+
+  // soft sky / horizon gradient backdrop
+  const bgGeo = new THREE.SphereGeometry(40, 12, 8);
+  bgGeo.scale(-1, 1, 1);
+  const bgMat = new THREE.ShaderMaterial({
+    uniforms: {
+      topColor: { value: new THREE.Color(0x6fa6d6) },
+      bottomColor: { value: new THREE.Color(0xfff1c9) },
+    },
+    vertexShader: `varying float vY; void main(){ vY = normalize(position).y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `uniform vec3 topColor; uniform vec3 bottomColor; varying float vY; void main(){ float t = clamp((vY + 0.2)/1.0, 0.0, 1.0); gl_FragColor = vec4(mix(bottomColor, topColor, t), 1.0); }`,
+    side: THREE.BackSide,
+    depthWrite: false,
+  });
+  scene.add(new THREE.Mesh(bgGeo, bgMat));
+
+  const camera = new THREE.PerspectiveCamera(40, canvas.width / canvas.height, 0.1, 200);
+  camera.position.set(0, 2.2, 12);
+  camera.lookAt(0, 0, 0);
+
+  const sun = new THREE.DirectionalLight(0xfff0d0, 1.0);
+  sun.position.set(5, 8, 4);
+  scene.add(sun);
+  scene.add(new THREE.AmbientLight(0x556677, 0.6));
+
+  model.scale.setScalar(baseScale);
+  scene.add(model);
+
+  // camera orbit state
+  let yaw = 0.4, pitch = -0.15;
+  let dist = 12;
+  let autoRotate = true;
+  let dragging = false;
+  let lastX = 0, lastY = 0;
+
+  canvas.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    autoRotate = false;
+    lastX = e.clientX; lastY = e.clientY;
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - lastX;
+    const dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    yaw += dx * 0.01;
+    pitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, pitch + dy * 0.01));
+  });
+  canvas.addEventListener('pointerup', () => { dragging = false; });
+  canvas.addEventListener('pointercancel', () => { dragging = false; });
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    dist = Math.max(4, Math.min(30, dist + e.deltaY * 0.01));
+  }, { passive: false });
+  canvas.addEventListener('dblclick', () => { autoRotate = !autoRotate; });
+
+  function tick() {
+    if (autoRotate) yaw += 0.003;
+    camera.position.x = Math.sin(yaw) * Math.cos(pitch) * dist;
+    camera.position.y = Math.sin(-pitch) * dist + 1.0;
+    camera.position.z = Math.cos(yaw) * Math.cos(pitch) * dist;
+    camera.lookAt(0, 0, 0);
+    renderer.render(scene, camera);
+    requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+setupViewer(document.getElementById('fokker'), buildFokker());
+setupViewer(document.getElementById('biplane'), buildBiplane());
+</script>
+</body>
+</html>

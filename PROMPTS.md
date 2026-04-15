@@ -157,3 +157,9 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > I want to see bullets flying out, like tracer fire. I also want to see when the enemies shoot at me. I should see bullets flying past, and I want the screen to flash red when I get hit. Also make the AI less agressive. Move the top wing all the way to the top of the screen, so it only covers a bit of the top.
 
 (→ beefier player tracers, new enemy tracer pool with orange-red bullets and spread, discrete per-hit damage + impactful red flash, lower enemy turn rate and hit chance, raise top wing so it only covers a sliver)
+
+## 31. Plane model viewer + global slowdown
+
+> show me the plane models in a localhost, also the enemies move way too fast, slow everything down by a lot
+
+(→ build tools/plane-models.html to render Fokker + Allied biplane side-by-side with slow rotation; cut player/enemy speed and turn rates roughly in half)
