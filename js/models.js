@@ -51,6 +51,25 @@ export function buildFokker() {
   propDisc.position.set(0, 0, 2.12);
   group.add(propDisc);
 
+  // Landing gear: twin wheels on horizontal axle, V-struts to the fuselage.
+  const wheelMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+  const wheelGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.14, 14);
+  for (const wx of [-0.6, 0.6]) {
+    const w = new THREE.Mesh(wheelGeo, wheelMat);
+    w.rotation.z = Math.PI / 2;
+    w.position.set(wx, -1.15, 0.3);
+    group.add(w);
+    // Strut from wheel to fuselage underside
+    const strut = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.6, 0.07), wood);
+    strut.position.set(wx * 0.6, -0.85, 0.3);
+    group.add(strut);
+  }
+  // Axle between wheels
+  const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.2, 8), wheelMat);
+  axle.rotation.z = Math.PI / 2;
+  axle.position.set(0, -1.15, 0.3);
+  group.add(axle);
+
   return group;
 }
 
@@ -175,6 +194,23 @@ export function buildBiplane() {
   propDisc.rotation.x = Math.PI / 2;
   propDisc.position.set(0, 0, 2.22);
   group.add(propDisc);
+
+  // Landing gear: twin wheels, horizontal axle, struts up to fuselage.
+  const wheelMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+  const wheelGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.12, 14);
+  for (const wx of [-0.65, 0.65]) {
+    const w = new THREE.Mesh(wheelGeo, wheelMat);
+    w.rotation.z = Math.PI / 2;
+    w.position.set(wx, -1.05, 0.4);
+    group.add(w);
+    const strut = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.55, 0.06), brown);
+    strut.position.set(wx * 0.55, -0.75, 0.4);
+    group.add(strut);
+  }
+  const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.3, 8), wheelMat);
+  axle.rotation.z = Math.PI / 2;
+  axle.position.set(0, -1.05, 0.4);
+  group.add(axle);
 
   return group;
 }

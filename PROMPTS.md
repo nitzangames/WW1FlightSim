@@ -187,3 +187,9 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > I think the enemy planes are flying backwards
 
 (→ rotate the mesh yaw by π so the propeller-nose aligns with the game's forward vector, which points toward -Z at yaw=0)
+
+## 36. Add wheels to plane models
+
+> I think the plane models need wheels to make it clearer that they are not flying upside down
+
+(→ add two wheels + struts under the fuselage of each plane so the "bottom" is obvious)
