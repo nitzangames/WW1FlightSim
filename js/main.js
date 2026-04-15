@@ -137,12 +137,27 @@ function loop(t) {
     if (plane.hp < prevPlayerHp) playHit();
     prevPlayerHp = plane.hp;
 
+    // Downed enemies begin a death spiral (stay alive for the animation);
+    // they're cleaned up when they hit the ground and explode.
     for (const e of enemies) {
-      if (e.alive && e.hp <= 0) {
-        e.alive = false;
+      if (e.alive && e.hp <= 0 && !e.dying) {
+        e.startDying();
         gs.kills++;
         playKill();
-        for (let i = 0; i < 10; i++) emitSmoke(smokePool, e.position.x, e.position.y, e.position.z, 1.2);
+        // Initial trail burst as the plane "catches fire"
+        for (let i = 0; i < 4; i++) {
+          emitSmoke(smokePool, e.position.x, e.position.y, e.position.z, 1.4);
+        }
+      }
+      if (e.justExploded) {
+        // Ground impact: big fireball of smoke + explosion sound.
+        playKill();
+        for (let i = 0; i < 30; i++) {
+          const ox = e.position.x + (Math.random() - 0.5) * 16;
+          const oy = e.position.y + Math.random() * 6;
+          const oz = e.position.z + (Math.random() - 0.5) * 16;
+          emitSmoke(smokePool, ox, oy, oz, 2.2);
+        }
       }
     }
 
@@ -150,7 +165,14 @@ function loop(t) {
     if (smokeTimer <= 0) {
       smokeTimer = 0.05;
       for (const e of enemies) {
-        if (e.alive && e.hp < 30) {
+        // Thick smoke while dying, lighter trail when damaged but still alive.
+        if (e.dying) {
+          emitSmoke(smokePool,
+            e.position.x - e.forward.x * 1.5,
+            e.position.y - e.forward.y * 1.5,
+            e.position.z - e.forward.z * 1.5,
+            1.6);
+        } else if (e.alive && e.hp < 30) {
           emitSmoke(smokePool,
             e.position.x - e.forward.x * 1.5,
             e.position.y - e.forward.y * 1.5,

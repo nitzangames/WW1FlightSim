@@ -69,7 +69,7 @@ export class Guns {
     let target = null;
     let bestDist2 = Infinity;
     for (const e of enemies) {
-      if (!e.alive) continue;
+      if (!e.alive || e.dying) continue;
       if (inCone(player.position, player.forward, e.position, { angle: GUN.CONE_DEG * DEG, range: GUN.RANGE })) {
         const d2 = dist2(player.position, e.position);
         if (d2 < bestDist2) { target = e; bestDist2 = d2; }

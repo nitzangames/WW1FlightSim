@@ -175,3 +175,9 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > much better. The blue circles at the top of the biplane wing are rotated the wrong way, they need to e flat
 
 (→ remove the π/2 rotation on the roundel discs so the flat face rests on the wing)
+
+## 34. Death spiral + ground explosion
+
+> great. When a plane is hit, it would be great if it would spiral down to the ground and explode there.
+
+(→ downed enemies enter a "dying" state: nose-down yaw spin with heavy smoke trail, then explode with a particle burst when they hit the terrain)

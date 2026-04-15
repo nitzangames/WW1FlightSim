@@ -1,5 +1,6 @@
-import { ENEMY } from './config.js';
+import { ENEMY, WORLD } from './config.js';
 import { buildBiplane } from './models.js';
+import { terrainHeight } from './world.js';
 
 export class Enemy {
   constructor({ x, y, z, mode = 'chaser' }) {
@@ -18,9 +19,58 @@ export class Enemy {
     this.fireTimer = 0;
     this.justFired = false;
     this.lastShotHit = false;
+    // Death spiral state.
+    this.dying = false;
+    this.dyingTime = 0;
+    this.justExploded = false; // set true for one frame on ground impact
+  }
+
+  startDying() {
+    this.dying = true;
+    this.dyingTime = 0;
+  }
+
+  updateDying(dt) {
+    this.dyingTime += dt;
+    // Nose-down spiral: steep pitch, fast yaw, hard roll.
+    this.yaw += 3.2 * dt;
+    this.pitch = Math.max(-1.25, this.pitch - 1.4 * dt);
+    this.roll += 5.0 * dt;
+    if (this.roll > Math.PI) this.roll -= Math.PI * 2;
+
+    const cp = Math.cos(this.pitch), sp = Math.sin(this.pitch);
+    const cy = Math.cos(this.yaw), sy = Math.sin(this.yaw);
+    const fx = -sy * cp;
+    const fy = sp;
+    const fz = -cy * cp;
+
+    // Slower horizontal drift + gravity-like vertical drop on top of forward.
+    const fallSpeed = this.speed * 0.6;
+    this.position.x += fx * fallSpeed * dt;
+    this.position.y += fy * fallSpeed * dt - 40 * dt;
+    this.position.z += fz * fallSpeed * dt;
+    this.forward.x = fx; this.forward.y = fy; this.forward.z = fz;
+
+    // Ground impact — explode when the mesh reaches the terrain surface.
+    const groundY = WORLD.GROUND_Y + terrainHeight(this.position.x, this.position.z);
+    if (this.position.y <= groundY + 2) {
+      this.position.y = groundY;
+      this.justExploded = true;
+      this.alive = false;
+      this.dying = false;
+    }
+
+    this.syncMesh();
   }
 
   update(dt, player) {
+    this.justFired = false;
+    this.lastShotHit = false;
+    this.justExploded = false;
+    if (this.dying) {
+      this.updateDying(dt);
+      return;
+    }
     // Compute desired heading
     const targetPoint = this.computeTargetPoint(player);
     const dx = targetPoint.x - this.position.x;
@@ -57,8 +107,6 @@ export class Enemy {
     // Fire at player if in-cone + in range.
     // Discrete shots: decrement fireTimer each frame while firing; every tick
     // it hits zero we spawn one bullet event (tracer + possible damage).
-    this.justFired = false;
-    this.lastShotHit = false;
     const px = player.position.x - this.position.x;
     const py = player.position.y - this.position.y;
     const pz = player.position.z - this.position.z;
