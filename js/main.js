@@ -13,6 +13,7 @@ overlayCanvas.width = CANVAS_W;
 overlayCanvas.height = CANVAS_H;
 
 const { renderer, scene, camera } = createRenderer(gameCanvas);
+camera.rotation.order = 'YXZ';
 buildWorld(scene);
 
 // Player plane and its mesh
@@ -20,6 +21,7 @@ const plane = new Plane();
 plane.position.y = 200;
 const planeMesh = buildFokker();
 planeMesh.visible = false; // hidden from cockpit — we're inside it
+planeMesh.rotation.order = 'YXZ';
 scene.add(planeMesh);
 
 // Joystick + input
@@ -47,10 +49,13 @@ overlayCanvas.addEventListener('pointercancel', () => joystick.up());
 // Apply plane orientation to camera
 function syncCameraToPlane() {
   camera.position.set(plane.position.x, plane.position.y, plane.position.z);
-  camera.rotation.order = 'YXZ';
   camera.rotation.y = plane.yaw;
   camera.rotation.x = plane.pitch;
   camera.rotation.z = -plane.roll;
+  planeMesh.position.copy(camera.position);
+  planeMesh.rotation.y = plane.yaw;
+  planeMesh.rotation.x = plane.pitch;
+  planeMesh.rotation.z = -plane.roll;
 }
 
 let last = performance.now();
