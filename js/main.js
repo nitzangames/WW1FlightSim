@@ -6,6 +6,7 @@ import { Plane } from './plane.js';
 import { buildFokker, buildCockpit } from './models.js';
 import { drawHud } from './hud.js';
 import { Spawner } from './enemy-spawner.js';
+import { Guns } from './weapons.js';
 
 const gameCanvas = document.getElementById('game-canvas');
 const overlayCanvas = document.getElementById('overlay-canvas');
@@ -32,6 +33,7 @@ scene.add(planeMesh);
 const enemies = [];
 const spawner = new Spawner(scene);
 let kills = 0;
+const guns = new Guns(scene);
 
 // Joystick + input
 const joystick = new Joystick();
@@ -78,11 +80,18 @@ function loop(t) {
   for (const e of enemies) e.update(dt, plane);
   spawner.removeDead(enemies);
   spawner.maybeSpawn(enemies, plane, kills);
+  const gunState = guns.update(dt, plane, enemies);
+  for (const e of enemies) {
+    if (e.alive && e.hp <= 0) {
+      e.alive = false;
+      kills++;
+    }
+  }
 
   renderer.render(scene, camera);
 
   drawHud(octx, {
-    locked: false,
+    locked: !!gunState.target,
     joystick: {
       active: joystick.active,
       ax: joystick.ax,

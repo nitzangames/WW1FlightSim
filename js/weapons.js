@@ -33,3 +33,103 @@ export function leadTarget(shooter, target, bulletSpeed) {
   }
   return { x: target.x + vx * t, y: target.y + vy * t, z: target.z + vz * t, t };
 }
+
+import { GUN } from './config.js';
+
+const DEG = Math.PI / 180;
+
+export class Guns {
+  constructor(scene, maxTracers = 60) {
+    this.scene = scene;
+    this.cooldown = 0;
+    this.fireInterval = 60 / GUN.RPM; // seconds per round
+    this.tracers = [];
+    this.maxTracers = maxTracers;
+    this.flashTimer = 0;
+    this._tracerCounter = 0;
+
+    const geom = new THREE.CylinderGeometry(0.04, 0.04, 3.0, 6);
+    geom.rotateX(Math.PI / 2);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xffe58a, fog: false });
+    for (let i = 0; i < maxTracers; i++) {
+      const m = new THREE.Mesh(geom, mat);
+      m.visible = false;
+      this.tracers.push({ mesh: m, life: 0, vx: 0, vy: 0, vz: 0 });
+      scene.add(m);
+    }
+    this.bulletSpeed = 500; // m/s, visual
+  }
+
+  update(dt, player, enemies) {
+    this.cooldown -= dt;
+    this.flashTimer -= dt;
+
+    // Find best target in cone (closest)
+    let target = null;
+    let bestDist2 = Infinity;
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      if (inCone(player.position, player.forward, e.position, { angle: GUN.CONE_DEG * DEG, range: GUN.RANGE })) {
+        const d2 = dist2(player.position, e.position);
+        if (d2 < bestDist2) { target = e; bestDist2 = d2; }
+      }
+    }
+
+    // Fire
+    let fired = false;
+    while (target && this.cooldown <= 0) {
+      this.cooldown += this.fireInterval;
+      this.flashTimer = 0.05;
+      fired = true;
+
+      // Aim-lead hit test
+      const enemyWithVel = {
+        x: target.position.x, y: target.position.y, z: target.position.z,
+        vx: target.forward.x * target.speed,
+        vy: target.forward.y * target.speed,
+        vz: target.forward.z * target.speed,
+      };
+      const lead = leadTarget(player.position, enemyWithVel, this.bulletSpeed);
+      if (inCone(player.position, player.forward, lead, { angle: GUN.CONE_DEG * DEG, range: GUN.RANGE })) {
+        target.hp -= GUN.DAMAGE_PER_ROUND;
+      }
+
+      this._tracerCounter++;
+      if (this._tracerCounter % 3 === 0) this.spawnTracer(player);
+    }
+    if (!target) this.cooldown = Math.max(0, this.cooldown);
+
+    // Update tracers
+    for (const t of this.tracers) {
+      if (!t.mesh.visible) continue;
+      t.mesh.position.x += t.vx * dt;
+      t.mesh.position.y += t.vy * dt;
+      t.mesh.position.z += t.vz * dt;
+      t.life -= dt;
+      if (t.life <= 0) t.mesh.visible = false;
+    }
+
+    return { firing: fired, target };
+  }
+
+  spawnTracer(player) {
+    const slot = this.tracers.find(t => !t.mesh.visible);
+    if (!slot) return;
+    slot.mesh.visible = true;
+    slot.mesh.position.set(player.position.x, player.position.y, player.position.z);
+    slot.mesh.lookAt(
+      player.position.x + player.forward.x,
+      player.position.y + player.forward.y,
+      player.position.z + player.forward.z
+    );
+    slot.vx = player.forward.x * this.bulletSpeed;
+    slot.vy = player.forward.y * this.bulletSpeed;
+    slot.vz = player.forward.z * this.bulletSpeed;
+    slot.life = 0.8;
+  }
+}
+
+function dist2(a, b) {
+  const dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
+  return dx * dx + dy * dy + dz * dz;
+}
