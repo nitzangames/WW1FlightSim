@@ -4,6 +4,7 @@ import { buildWorld } from './world.js';
 import { Joystick } from './input.js';
 import { Plane } from './plane.js';
 import { buildFokker, buildCockpit } from './models.js';
+import { drawHud } from './hud.js';
 
 const gameCanvas = document.getElementById('game-canvas');
 const overlayCanvas = document.getElementById('overlay-canvas');
@@ -72,11 +73,17 @@ function loop(t) {
 
   renderer.render(scene, camera);
 
-  octx.clearRect(0, 0, CANVAS_W, CANVAS_H);
-  octx.fillStyle = '#fff';
-  octx.font = '20px sans-serif';
-  octx.textAlign = 'left';
-  octx.fillText(VERSION, 16, 32);
+  drawHud(octx, {
+    locked: false,
+    joystick: {
+      active: joystick.active,
+      ax: joystick.ax,
+      ay: joystick.ay,
+      x: joystick.x,
+      y: joystick.y,
+      radius: joystick.radius,
+    },
+  });
 
   requestAnimationFrame(loop);
 }
