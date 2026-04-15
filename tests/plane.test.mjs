@@ -44,3 +44,13 @@ test('no recovery bias inside safe radius', () => {
   p.update(1, { x: 0, y: 0 });
   assert.equal(p.yaw, yawBefore);
 });
+
+test('hard-radius pull is stronger than soft', () => {
+  const soft = new Plane(); soft.position.x = 2000;  // past RETURN_SOFT (1800)
+  const hard = new Plane(); hard.position.x = 2500;  // past RETURN_HARD (2400)
+  soft.update(0.1, { x: 0, y: 0 });
+  hard.update(0.1, { x: 0, y: 0 });
+  // Hard zone pulls 15°/s vs 5°/s soft, over 0.1s that's 1.5° vs 0.5° → hard delta > soft delta
+  assert.ok(Math.abs(hard.yaw) > Math.abs(soft.yaw),
+    `hard pull (${hard.yaw}) should exceed soft pull (${soft.yaw})`);
+});
