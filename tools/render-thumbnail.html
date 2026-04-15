@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Thumbnail</title>
+<style>body{margin:0;background:#222;display:flex;align-items:center;justify-content:center;height:100vh}
+canvas{border:1px solid #444;background:#6fa6d6}</style>
+</head><body>
+<canvas id="c" width="1024" height="1024"></canvas>
+<script>
+const c = document.getElementById('c'); const g = c.getContext('2d');
+// Sky gradient
+const sky = g.createLinearGradient(0,0,0,1024);
+sky.addColorStop(0,'#4a7ab0'); sky.addColorStop(1,'#f0dcb0');
+g.fillStyle = sky; g.fillRect(0,0,1024,1024);
+// Silhouette of triplane
+g.fillStyle = '#b01a1a';
+g.fillRect(400, 470, 220, 40);
+g.fillRect(250, 380, 520, 28);
+g.fillRect(250, 500, 520, 28);
+g.fillRect(250, 620, 520, 28);
+g.fillStyle = '#202020';
+g.fillRect(470, 470, 80, 40);
+// Biplane silhouettes far away
+g.fillStyle = '#8b824a';
+for (const [x,y] of [[120,240],[860,300],[780,760]]) {
+  g.fillRect(x-40,y,80,10); g.fillRect(x-40,y+30,80,10); g.fillRect(x-4,y+3,8,30);
+}
+// Title
+g.fillStyle = '#fff5db'; g.font = 'bold 128px serif'; g.textAlign = 'center';
+g.fillText('WW1', 512, 230);
+g.font = 'bold 96px serif';
+g.fillText('FLIGHT SIM', 512, 930);
+</script>
+</body></html>
