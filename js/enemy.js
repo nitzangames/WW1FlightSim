@@ -17,7 +17,29 @@ export class Enemy {
   }
 
   update(dt, player) {
-    // Placeholder AI: fly straight in current heading. Real AI in Task 11.
+    // Compute desired heading
+    const targetPoint = this.computeTargetPoint(player);
+    const dx = targetPoint.x - this.position.x;
+    const dy = targetPoint.y - this.position.y;
+    const dz = targetPoint.z - this.position.z;
+    const dist = Math.hypot(dx, dy, dz) || 1;
+    const nx = dx / dist, ny = dy / dist, nz = dz / dist;
+
+    const desiredYaw = Math.atan2(-nx, -nz);
+    const desiredPitch = Math.asin(Math.max(-1, Math.min(1, ny)));
+
+    // Limit turn rate
+    const turnCap = ENEMY.TURN_CAP;
+    let dYaw = desiredYaw - this.yaw;
+    dYaw = Math.atan2(Math.sin(dYaw), Math.cos(dYaw));
+    this.yaw += Math.sign(dYaw) * Math.min(Math.abs(dYaw), turnCap * dt);
+    let dPitch = desiredPitch - this.pitch;
+    this.pitch += Math.sign(dPitch) * Math.min(Math.abs(dPitch), turnCap * 0.7 * dt);
+    // Bank visually into turns
+    this.roll += (dYaw * 1.5 - this.roll) * 0.08;
+    this.roll = Math.max(-1.0, Math.min(1.0, this.roll));
+
+    // Forward integration
     const fx = -Math.sin(this.yaw) * Math.cos(this.pitch);
     const fy = Math.sin(this.pitch);
     const fz = -Math.cos(this.yaw) * Math.cos(this.pitch);
@@ -27,7 +49,21 @@ export class Enemy {
     this.forward.x = fx;
     this.forward.y = fy;
     this.forward.z = fz;
+
     this.syncMesh();
+  }
+
+  computeTargetPoint(player) {
+    if (this.mode === 'jouster') {
+      // Aim for a point 200m ahead of player's nose
+      return {
+        x: player.position.x + player.forward.x * 200,
+        y: player.position.y + player.forward.y * 200,
+        z: player.position.z + player.forward.z * 200,
+      };
+    }
+    // Chaser: aim at player's current position
+    return { ...player.position };
   }
 
   syncMesh() {

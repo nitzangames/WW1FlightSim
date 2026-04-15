@@ -29,11 +29,20 @@ planeMesh.visible = false; // hidden from cockpit — we're inside it
 planeMesh.rotation.order = 'YXZ';
 scene.add(planeMesh);
 
-// Test enemy
+// Test enemies
 const enemies = [];
-const e0 = new Enemy({ x: 0, y: 200, z: -400 });
-enemies.push(e0);
-scene.add(e0.mesh);
+function spawnEnemy(mode, bearing, dist, altOffset) {
+  const x = plane.position.x + Math.sin(bearing) * dist;
+  const z = plane.position.z + Math.cos(bearing) * dist;
+  const y = plane.position.y + altOffset;
+  const e = new Enemy({ x, y, z, mode });
+  e.yaw = bearing + Math.PI; // face roughly toward origin
+  enemies.push(e);
+  scene.add(e.mesh);
+  return e;
+}
+spawnEnemy('chaser', 0.3, 500, 20);
+spawnEnemy('jouster', -0.6, 600, -10);
 
 // Joystick + input
 const joystick = new Joystick();
