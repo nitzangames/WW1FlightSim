@@ -331,3 +331,7 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 ## 63. Airfield + takeoff
 
 > Can you add an airfield and have the player takeoff from an airfield at start?
+
+## 64. Pause + settings menu
+
+> I want to add a pause and settings menu

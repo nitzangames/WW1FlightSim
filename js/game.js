@@ -1,4 +1,16 @@
-export const STATE = { MENU: 'menu', TAKEOFF: 'takeoff', PLAYING: 'playing', GAMEOVER: 'gameover' };
+export const STATE = { MENU: 'menu', TAKEOFF: 'takeoff', PLAYING: 'playing', PAUSED: 'paused', GAMEOVER: 'gameover' };
+
+// Persisted settings (localStorage).
+const SETTINGS_KEY = 'ww1.settings';
+export function loadSettings() {
+  try {
+    return { soundOn: true, invertY: false, sensitivity: 1.0,
+      ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') };
+  } catch (_) { return { soundOn: true, invertY: false, sensitivity: 1.0 }; }
+}
+export function saveSettings(s) {
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch (_) { /* ignore */ }
+}
 
 const RANKS = [
   { min: 0,  title: 'Cadet' },
@@ -21,6 +33,9 @@ export class GameState {
     this.best = parseInt(localStorage.getItem('ww1.best') || '0', 10) || 0;
     this.gameOverTimer = 0;
     this.wave = 1;
+    this.stateBeforePause = null;
+    this.settingsOpen = false;
+    this.settings = loadSettings();
     this.waveFlash = 0; // countdown timer for wave announcement
     this.ammo = 200;
     this.maxAmmo = 200;
@@ -50,6 +65,20 @@ export class GameState {
     if (this.kills > this.best) {
       this.best = this.kills;
       localStorage.setItem('ww1.best', String(this.best));
+    }
+  }
+
+  pause() {
+    if (this.state === STATE.PLAYING || this.state === STATE.TAKEOFF) {
+      this.stateBeforePause = this.state;
+      this.state = STATE.PAUSED;
+      this.settingsOpen = false;
+    }
+  }
+  resume() {
+    if (this.state === STATE.PAUSED) {
+      this.state = this.stateBeforePause || STATE.PLAYING;
+      this.settingsOpen = false;
     }
   }
 

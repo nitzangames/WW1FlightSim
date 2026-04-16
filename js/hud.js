@@ -417,6 +417,143 @@ export function drawHud(ctx, state) {
     ctx.fillText(`BEST: ${state.best}`, mx, mpY + btnH + 60);
   }
 
+  // Pause button — small icon top-left (below kills/ammo) during play.
+  if (!state.menu && !state.gameOver && !state.paused) {
+    const pbX = 32, pbY = 152, pbS = 42;
+    ctx.fillStyle = '#00000055';
+    ctx.beginPath(); ctx.roundRect(pbX, pbY, pbS, pbS, 8); ctx.fill();
+    ctx.fillStyle = '#ffffffbb';
+    ctx.fillRect(pbX + 12, pbY + 10, 7, 22);
+    ctx.fillRect(pbX + 23, pbY + 10, 7, 22);
+    drawHud._pauseBtn = { x: pbX, y: pbY, w: pbS, h: pbS };
+  } else {
+    drawHud._pauseBtn = null;
+  }
+
+  // Pause overlay.
+  if (state.paused && !state.settingsOpen) {
+    ctx.fillStyle = '#000000bb';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    const mx = CANVAS_W / 2;
+
+    ctx.fillStyle = '#ffd65a';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 80px serif';
+    ctx.fillText('PAUSED', mx, CANVAS_H * 0.3);
+
+    const btnW = 480, btnH = 90;
+    // Resume
+    const rY = CANVAS_H * 0.42;
+    ctx.fillStyle = '#4a8a2a';
+    ctx.beginPath(); ctx.roundRect(mx - btnW / 2, rY, btnW, btnH, 14); ctx.fill();
+    ctx.fillStyle = '#ffffffee';
+    ctx.font = 'bold 42px sans-serif';
+    ctx.fillText('RESUME', mx, rY + 58);
+    drawHud._resumeBtn = { x: mx - btnW / 2, y: rY, w: btnW, h: btnH };
+
+    // Settings
+    const sY = rY + btnH + 24;
+    ctx.fillStyle = '#4a4a5a';
+    ctx.beginPath(); ctx.roundRect(mx - btnW / 2, sY, btnW, btnH, 14); ctx.fill();
+    ctx.fillStyle = '#ffffffee';
+    ctx.fillText('SETTINGS', mx, sY + 58);
+    drawHud._settingsBtn = { x: mx - btnW / 2, y: sY, w: btnW, h: btnH };
+
+    // Quit
+    const qY = sY + btnH + 24;
+    ctx.fillStyle = '#8a2a2a';
+    ctx.beginPath(); ctx.roundRect(mx - btnW / 2, qY, btnW, btnH, 14); ctx.fill();
+    ctx.fillStyle = '#ffffffee';
+    ctx.fillText('QUIT TO MENU', mx, qY + 58);
+    drawHud._quitBtn = { x: mx - btnW / 2, y: qY, w: btnW, h: btnH };
+  } else {
+    drawHud._resumeBtn = null;
+    drawHud._settingsBtn = null;
+    drawHud._quitBtn = null;
+  }
+
+  // Settings screen.
+  if (state.paused && state.settingsOpen) {
+    ctx.fillStyle = '#000000cc';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    const mx = CANVAS_W / 2;
+
+    ctx.fillStyle = '#ffd65a';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 72px serif';
+    ctx.fillText('SETTINGS', mx, CANVAS_H * 0.2);
+
+    const rowH = 100, startY = CANVAS_H * 0.3;
+    const settings = state.settings || {};
+
+    // Sound toggle
+    ctx.fillStyle = '#ffffffdd';
+    ctx.font = 'bold 36px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Sound', 100, startY + 45);
+    const sndX = CANVAS_W - 240, sndW = 160, sndH = 60;
+    ctx.fillStyle = settings.soundOn ? '#4a8a2a' : '#5a2a2a';
+    ctx.beginPath(); ctx.roundRect(sndX, startY + 12, sndW, sndH, 12); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.fillText(settings.soundOn ? 'ON' : 'OFF', sndX + sndW / 2, startY + 50);
+    drawHud._soundBtn = { x: sndX, y: startY + 12, w: sndW, h: sndH };
+
+    // Invert Y toggle
+    const iyY = startY + rowH;
+    ctx.fillStyle = '#ffffffdd';
+    ctx.font = 'bold 36px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Invert Y', 100, iyY + 45);
+    ctx.fillStyle = settings.invertY ? '#4a8a2a' : '#5a2a2a';
+    ctx.beginPath(); ctx.roundRect(sndX, iyY + 12, sndW, sndH, 12); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.fillText(settings.invertY ? 'ON' : 'OFF', sndX + sndW / 2, iyY + 50);
+    drawHud._invertBtn = { x: sndX, y: iyY + 12, w: sndW, h: sndH };
+
+    // Sensitivity (3-step)
+    const senY = startY + rowH * 2;
+    ctx.fillStyle = '#ffffffdd';
+    ctx.font = 'bold 36px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Sensitivity', 100, senY + 45);
+    const senLabels = ['LOW', 'MED', 'HIGH'];
+    const senVals = [0.6, 1.0, 1.5];
+    const senIdx = senVals.indexOf(settings.sensitivity) >= 0 ? senVals.indexOf(settings.sensitivity) : 1;
+    const senBtnW = 140;
+    drawHud._senBtns = [];
+    for (let i = 0; i < 3; i++) {
+      const bx = 100 + i * (senBtnW + 16);
+      const active = i === senIdx;
+      ctx.fillStyle = active ? '#4a6a8a' : '#3a3a4a';
+      ctx.beginPath(); ctx.roundRect(bx, senY + rowH - 10, senBtnW, sndH, 10); ctx.fill();
+      ctx.fillStyle = active ? '#fff' : '#aaa';
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 26px sans-serif';
+      ctx.fillText(senLabels[i], bx + senBtnW / 2, senY + rowH + 28);
+      drawHud._senBtns.push({ x: bx, y: senY + rowH - 10, w: senBtnW, h: sndH, val: senVals[i] });
+    }
+
+    // Back button
+    const backY = CANVAS_H * 0.78;
+    const btnW = 400, btnH = 85;
+    ctx.fillStyle = '#5a5a6a';
+    ctx.beginPath(); ctx.roundRect(mx - btnW / 2, backY, btnW, btnH, 14); ctx.fill();
+    ctx.fillStyle = '#ffffffee';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 40px sans-serif';
+    ctx.fillText('BACK', mx, backY + 55);
+    drawHud._settingsBackBtn = { x: mx - btnW / 2, y: backY, w: btnW, h: btnH };
+  } else {
+    drawHud._soundBtn = null;
+    drawHud._invertBtn = null;
+    drawHud._senBtns = null;
+    drawHud._settingsBackBtn = null;
+  }
+
   // Version
   ctx.fillStyle = '#ffffff55';
   ctx.font = '16px sans-serif';

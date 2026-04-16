@@ -12,7 +12,7 @@ import { Guns, EnemyTracers } from './weapons.js';
 import { PLAYER, ENEMY, WORLD } from './config.js';
 import { Balloon, Zeppelin, Artillery } from './targets.js';
 import { Weather } from './weather.js';
-import { GameState, STATE } from './game.js';
+import { GameState, STATE, saveSettings } from './game.js';
 import { initAudio, startWind, stopWind, playFlyby, playExplosion, playDeathWhine, playGunBurst, playHit, playKill } from './audio.js';
 import { mpAvailable, mpOpenLobby, mpIsHost, mpRoom, mpSend, mpInit, mpLeave,
          mpSetMessageHandler, mpSetDisconnectHandler, mpGetRemotes, mpInterpolateRemote } from './multiplayer.js';
@@ -84,26 +84,61 @@ function screenToCanvas(clientX, clientY) {
 overlayCanvas.addEventListener('pointerdown', (e) => {
   initAudio();
   const p = screenToCanvas(e.clientX, e.clientY);
+  const inBtn = (btn) => btn && p.x >= btn.x && p.x <= btn.x + btn.w && p.y >= btn.y && p.y <= btn.y + btn.h;
 
+  // ---- Menu ----
   if (gs.state === STATE.MENU) {
-    // Check if tap hit a menu button (regions stored on drawHud by the last render).
-    const inBtn = (btn) => btn && p.x >= btn.x && p.x <= btn.x + btn.w && p.y >= btn.y && p.y <= btn.y + btn.h;
-
     if (inBtn(drawHud._mpBtn) && mpAvailable()) {
       mpOpenLobby({
         onStart: (isHost) => mpStartGame(isHost),
-        onCancel: () => { /* stay on menu */ },
+        onCancel: () => {},
       });
       return;
     }
-    // Solo button or any tap outside buttons → solo game.
     mpMode = false;
     resetGameObjects();
     gs.startRun();
-    joystick.down(p.x, p.y);
     return;
   }
 
+  // ---- Paused (settings sub-screen) ----
+  if (gs.state === STATE.PAUSED && gs.settingsOpen) {
+    if (inBtn(drawHud._soundBtn)) {
+      gs.settings.soundOn = !gs.settings.soundOn;
+      saveSettings(gs.settings);
+      return;
+    }
+    if (inBtn(drawHud._invertBtn)) {
+      gs.settings.invertY = !gs.settings.invertY;
+      saveSettings(gs.settings);
+      return;
+    }
+    if (drawHud._senBtns) {
+      for (const sb of drawHud._senBtns) {
+        if (inBtn(sb)) { gs.settings.sensitivity = sb.val; saveSettings(gs.settings); return; }
+      }
+    }
+    if (inBtn(drawHud._settingsBackBtn)) {
+      gs.settingsOpen = false;
+      return;
+    }
+    return;
+  }
+
+  // ---- Paused (main pause menu) ----
+  if (gs.state === STATE.PAUSED) {
+    if (inBtn(drawHud._resumeBtn)) { gs.resume(); return; }
+    if (inBtn(drawHud._settingsBtn)) { gs.settingsOpen = true; return; }
+    if (inBtn(drawHud._quitBtn)) {
+      gs.state = STATE.MENU;
+      if (mpMode) mpLeave();
+      mpMode = false;
+      return;
+    }
+    return;
+  }
+
+  // ---- Game over ----
   if (gs.state === STATE.GAMEOVER && gs.gameOverTimer <= 0) {
     gs.state = STATE.MENU;
     if (mpMode) mpLeave();
@@ -111,6 +146,11 @@ overlayCanvas.addEventListener('pointerdown', (e) => {
     return;
   }
 
+  // ---- Playing / Takeoff: check pause button first, then joystick ----
+  if (inBtn(drawHud._pauseBtn)) {
+    gs.pause();
+    return;
+  }
   joystick.down(p.x, p.y);
 });
 overlayCanvas.addEventListener('pointermove', (e) => {
@@ -369,7 +409,11 @@ function loop(t) {
     if (plane.dying) {
       plane.updateDying(dt);
     } else {
-      plane.update(dt, joystick.value());
+      const jv = joystick.value();
+      // Apply settings: invert Y + sensitivity.
+      const sens = gs.settings.sensitivity || 1.0;
+      const iy = gs.settings.invertY ? -1 : 1;
+      plane.update(dt, { x: jv.x * sens, y: jv.y * iy * sens });
       plane.yaw += weather.update(dt);
     }
     syncCameraToPlane();
@@ -640,6 +684,9 @@ function loop(t) {
     best: gs.best,
     gameOver: gs.state === STATE.GAMEOVER,
     menu: gs.state === STATE.MENU,
+    paused: gs.state === STATE.PAUSED,
+    settingsOpen: gs.settingsOpen,
+    settings: gs.settings,
     mpAvailable: mpAvailable(),
     joystick: { active: joystick.active, ax: joystick.ax, ay: joystick.ay, x: joystick.x, y: joystick.y, radius: joystick.radius },
     player: plane,
