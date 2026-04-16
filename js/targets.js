@@ -39,9 +39,10 @@ export class Balloon {
   startDying() {
     this.dying = true;
     this.dyingTime = 0;
-    this.alive = false;
-    this.fallVy = -4; // initial small kick
-    if (this._tether) this._tether.visible = false; // cable detaches
+    // alive stays TRUE so the spawner doesn't remove the mesh during the fall.
+    // It flips to false only on ground impact.
+    this.fallVy = -4;
+    if (this._tether) this._tether.visible = false;
   }
 
   update(dt, _player) {
@@ -49,9 +50,7 @@ export class Balloon {
     this.justExploded = false;
     if (this.dying) {
       this.dyingTime += dt;
-      // Gravity-driven fall with tumbling rotation. Balloon keeps its spot on
-      // the map (no horizontal momentum), just sinks while spinning.
-      this.fallVy -= 34 * dt;
+      this.fallVy -= 28 * dt;
       this.position.y += this.fallVy * dt;
       this.yaw += 1.6 * dt;
       this.pitch -= 0.7 * dt;
@@ -60,6 +59,7 @@ export class Balloon {
       if (this.position.y <= groundY + 1) {
         this.position.y = groundY;
         this.justExploded = true;
+        this.alive = false;
         this.dying = false;
       }
       this.mesh.position.set(this.position.x, this.position.y, this.position.z);
@@ -103,7 +103,11 @@ export class Zeppelin {
   startDying() {
     this.dying = true;
     this.dyingTime = 0;
-    this.alive = false;
+    // alive stays TRUE during the fall — flipped on ground impact.
+    // Preserve horizontal drift so it arcs forward while sinking.
+    this.fallVx = this.forward.x * this.speed;
+    this.fallVy = 0;
+    this.fallVz = this.forward.z * this.speed;
   }
 
   update(dt, _player) {
@@ -111,23 +115,28 @@ export class Zeppelin {
     this.justExploded = false;
 
     if (this.dying) {
-      // Slow, inexorable sink. Gentle pitch + roll, much slower than a plane.
       this.dyingTime += dt;
-      this.pitch = Math.max(-0.25, this.pitch - 0.08 * dt);
-      this.roll += 0.18 * dt;
-      this.yaw += 0.3 * dt;
-      const cp = Math.cos(this.pitch);
-      const fx = -Math.sin(this.yaw) * cp;
-      const fy = Math.sin(this.pitch);
-      const fz = -Math.cos(this.yaw) * cp;
-      this.position.x += fx * 4 * dt;
-      this.position.y += fy * 4 * dt - 10 * dt;
-      this.position.z += fz * 4 * dt;
-      this.forward.x = fx; this.forward.y = fy; this.forward.z = fz;
+      // Gravity pulls down; gentle drag bleeds off horizontal drift.
+      this.fallVy -= 12 * dt;
+      const drag = Math.exp(-0.12 * dt);
+      this.fallVx *= drag;
+      this.fallVz *= drag;
+      this.position.x += this.fallVx * dt;
+      this.position.y += this.fallVy * dt;
+      this.position.z += this.fallVz * dt;
+      // Nose tilts progressively toward the ground — dramatic 35° max.
+      this.pitch = Math.max(-0.6, this.pitch - 0.1 * dt);
+      this.roll += 0.15 * dt;
+      this.yaw += 0.22 * dt;
+      const vmag = Math.hypot(this.fallVx, this.fallVy, this.fallVz) || 1;
+      this.forward.x = this.fallVx / vmag;
+      this.forward.y = this.fallVy / vmag;
+      this.forward.z = this.fallVz / vmag;
       const groundY = WORLD.GROUND_Y + terrainHeight(this.position.x, this.position.z);
       if (this.position.y <= groundY + 6) {
         this.position.y = groundY;
         this.justExploded = true;
+        this.alive = false;
         this.dying = false;
       }
     } else {
