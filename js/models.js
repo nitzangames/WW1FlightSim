@@ -163,9 +163,10 @@ export function buildBalloon() {
   // Long tether down to the ground. Length deliberately over-long — the
   // terrain geometry hides whatever hangs below the surface.
   const tetherLen = 280;
-  const c = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, tetherLen, 4), cable);
-  c.position.set(0, -4.2 - tetherLen / 2, 0);
-  group.add(c);
+  const tether = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, tetherLen, 4), cable);
+  tether.position.set(0, -4.2 - tetherLen / 2, 0);
+  group.add(tether);
+  group.userData.tether = tether;
 
   return group;
 }
@@ -249,6 +250,58 @@ export function updateSmoke(pool, dt) {
     s.sprite.material.opacity = Math.max(0, 0.7 * s.life / s.maxLife);
     const grow = 1 + (1 - s.life / s.maxLife) * 2;
     s.sprite.scale.set(3 * grow, 3 * grow, 3 * grow);
+    if (s.life <= 0) s.sprite.visible = false;
+  }
+}
+
+// Bright orange/yellow fire particles with additive blending. Short-lived.
+function makeFireCanvas() {
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 64;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(32, 32, 2, 32, 32, 32);
+  grad.addColorStop(0.0, 'rgba(255, 245, 150, 1.0)');
+  grad.addColorStop(0.35, 'rgba(255, 140, 40, 0.9)');
+  grad.addColorStop(1.0, 'rgba(180, 40, 20, 0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  return c;
+}
+
+export function createFirePool(scene, size = 120) {
+  const tex = new THREE.CanvasTexture(makeFireCanvas());
+  const mat = new THREE.SpriteMaterial({
+    map: tex, transparent: true, opacity: 0.95, depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+  const pool = [];
+  for (let i = 0; i < size; i++) {
+    const s = new THREE.Sprite(mat.clone());
+    s.visible = false;
+    s.scale.set(2.2, 2.2, 2.2);
+    scene.add(s);
+    pool.push({ sprite: s, life: 0, maxLife: 1 });
+  }
+  return pool;
+}
+
+export function emitFire(pool, x, y, z, maxLife = 0.55) {
+  const slot = pool.find(s => !s.sprite.visible);
+  if (!slot) return;
+  slot.sprite.visible = true;
+  slot.sprite.position.set(x, y, z);
+  slot.sprite.material.opacity = 0.95;
+  slot.life = maxLife;
+  slot.maxLife = maxLife;
+}
+
+export function updateFire(pool, dt) {
+  for (const s of pool) {
+    if (!s.sprite.visible) continue;
+    s.life -= dt;
+    s.sprite.material.opacity = Math.max(0, 0.95 * s.life / s.maxLife);
+    const grow = 1 + (1 - s.life / s.maxLife) * 1.6;
+    s.sprite.scale.set(2.2 * grow, 2.2 * grow, 2.2 * grow);
     if (s.life <= 0) s.sprite.visible = false;
   }
 }

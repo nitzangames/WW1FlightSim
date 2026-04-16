@@ -239,3 +239,9 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > I think B2 and Z1 are the best
 
 (→ add buildBalloon (Caquot triple-fin) + buildZeppelin (classic LZ) to models.js, Balloon/Zeppelin classes in new targets.js, spawn 3 balloons + 1 zeppelin on game start, balloons pop on hit with fireball, zeppelin slowly sinks into the ground with spiral; spawner counts only planes; zeppelin kill is worth 5)
+
+## 45. Airships burn as they fall
+
+> when zepplins and balloons blow up, they show fall to the ground on fire and only disappear when they hit the ground
+
+(→ balloons now tumble toward the ground instead of popping midair; fire particle pool added (orange sprites with additive blending); planes + airships emit fire+smoke trail while dying until ground impact; tether is hidden when the balloon detaches)

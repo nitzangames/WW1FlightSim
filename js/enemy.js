@@ -34,30 +34,36 @@ export class Enemy {
   startDying() {
     this.dying = true;
     this.dyingTime = 0;
+    // Preserve momentum at moment of death — the plane coasts ballistically
+    // while visually spinning out of control.
+    this.fallVx = this.forward.x * this.speed;
+    this.fallVy = this.forward.y * this.speed;
+    this.fallVz = this.forward.z * this.speed;
   }
 
   updateDying(dt) {
     this.dyingTime += dt;
-    // Nose-down spiral: steep pitch, fast yaw, hard roll.
+    // Visual spin — decoupled from the trajectory.
     this.yaw += 3.2 * dt;
     this.pitch = Math.max(-1.25, this.pitch - 1.4 * dt);
     this.roll += 5.0 * dt;
     if (this.roll > Math.PI) this.roll -= Math.PI * 2;
 
-    const cp = Math.cos(this.pitch), sp = Math.sin(this.pitch);
-    const cy = Math.cos(this.yaw), sy = Math.sin(this.yaw);
-    const fx = -sy * cp;
-    const fy = sp;
-    const fz = -cy * cp;
+    // Ballistic motion: gravity + gentle horizontal drag.
+    this.fallVy -= 55 * dt;
+    const drag = Math.exp(-0.35 * dt);
+    this.fallVx *= drag;
+    this.fallVz *= drag;
+    this.position.x += this.fallVx * dt;
+    this.position.y += this.fallVy * dt;
+    this.position.z += this.fallVz * dt;
 
-    // Slower horizontal drift + gravity-like vertical drop on top of forward.
-    const fallSpeed = this.speed * 0.6;
-    this.position.x += fx * fallSpeed * dt;
-    this.position.y += fy * fallSpeed * dt - 40 * dt;
-    this.position.z += fz * fallSpeed * dt;
-    this.forward.x = fx; this.forward.y = fy; this.forward.z = fz;
+    // Align forward with motion so the smoke trail looks natural.
+    const vmag = Math.hypot(this.fallVx, this.fallVy, this.fallVz) || 1;
+    this.forward.x = this.fallVx / vmag;
+    this.forward.y = this.fallVy / vmag;
+    this.forward.z = this.fallVz / vmag;
 
-    // Ground impact — explode when the mesh reaches the terrain surface.
     const groundY = WORLD.GROUND_Y + terrainHeight(this.position.x, this.position.z);
     if (this.position.y <= groundY + 2) {
       this.position.y = groundY;

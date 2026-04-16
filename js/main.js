@@ -3,7 +3,7 @@ import { createRenderer } from './renderer.js';
 import { buildWorld } from './world.js';
 import { Joystick } from './input.js';
 import { Plane } from './plane.js';
-import { buildFokker, buildCockpit, createSmokePool, emitSmoke, updateSmoke, createScorchPool, placeScorch } from './models.js';
+import { buildFokker, buildCockpit, createSmokePool, emitSmoke, updateSmoke, createScorchPool, placeScorch, createFirePool, emitFire, updateFire } from './models.js';
 import { terrainHeight } from './world.js';
 import { drawHud } from './hud.js';
 import { Spawner } from './enemy-spawner.js';
@@ -43,6 +43,7 @@ const enemyTracers = new EnemyTracers(scene);
 
 const smokePool = createSmokePool(scene);
 const scorchPool = createScorchPool(scene);
+const firePool = createFirePool(scene);
 let smokeTimer = 0;
 
 const gs = new GameState();
@@ -167,6 +168,7 @@ function loop(t) {
   last = t;
 
   updateSmoke(smokePool, dt);
+  updateFire(firePool, dt);
   enemyTracers.update(dt);
 
   const isPlaying = gs.state === STATE.PLAYING;
@@ -234,14 +236,24 @@ function loop(t) {
     if (smokeTimer <= 0) {
       smokeTimer = 0.05;
       for (const e of enemies) {
-        // Thick smoke while dying, lighter trail when damaged but still alive.
         if (e.dying) {
+          // Big burning wreck: thick smoke AND multiple fire particles per
+          // tick so it visibly falls on fire. Zeppelin is huge so extra.
+          const jitter = e.type === 'zeppelin' ? 6 : 2;
+          const fireCount = e.type === 'zeppelin' ? 4 : 2;
           emitSmoke(smokePool,
             e.position.x - e.forward.x * 1.5,
             e.position.y - e.forward.y * 1.5,
             e.position.z - e.forward.z * 1.5,
-            1.6);
-        } else if (e.alive && e.hp < 30) {
+            1.8);
+          for (let i = 0; i < fireCount; i++) {
+            emitFire(firePool,
+              e.position.x + (Math.random() - 0.5) * jitter,
+              e.position.y + (Math.random() - 0.5) * jitter,
+              e.position.z + (Math.random() - 0.5) * jitter,
+              0.55);
+          }
+        } else if (e.alive && e.hp < 30 && e.type === 'plane') {
           emitSmoke(smokePool,
             e.position.x - e.forward.x * 1.5,
             e.position.y - e.forward.y * 1.5,
@@ -249,7 +261,16 @@ function loop(t) {
             1.0);
         }
       }
-      if (plane.hp < 30 && plane.alive) {
+      if (plane.dying) {
+        emitSmoke(smokePool, plane.position.x, plane.position.y, plane.position.z, 1.8);
+        for (let i = 0; i < 3; i++) {
+          emitFire(firePool,
+            plane.position.x + (Math.random() - 0.5) * 3,
+            plane.position.y + (Math.random() - 0.5) * 3,
+            plane.position.z + (Math.random() - 0.5) * 3,
+            0.55);
+        }
+      } else if (plane.hp < 30 && plane.alive) {
         emitSmoke(smokePool,
           plane.position.x - plane.forward.x * 2,
           plane.position.y - plane.forward.y * 2,

@@ -30,32 +30,47 @@ export class Balloon {
     this.mesh.rotation.order = 'YXZ';
     this.mesh.position.set(x, y, z);
     this.mesh.rotation.y = this.yaw;
+    this._tether = this.mesh.userData.tether;
     this.swayT = Math.random() * Math.PI * 2;
+    this.fallVy = 0;
   }
 
   startDying() {
     this.dying = true;
     this.dyingTime = 0;
     this.alive = false;
+    this.fallVy = -4; // initial small kick
+    if (this._tether) this._tether.visible = false; // cable detaches
   }
 
   update(dt, _player) {
     this.justFired = false;
     this.justExploded = false;
     if (this.dying) {
-      // Balloons pop fast — hydrogen doesn't linger.
       this.dyingTime += dt;
-      if (this.dyingTime > 0.25) {
+      // Gravity-driven fall with tumbling rotation. Balloon keeps its spot on
+      // the map (no horizontal momentum), just sinks while spinning.
+      this.fallVy -= 34 * dt;
+      this.position.y += this.fallVy * dt;
+      this.yaw += 1.6 * dt;
+      this.pitch -= 0.7 * dt;
+      this.roll += 2.4 * dt;
+      const groundY = WORLD.GROUND_Y + terrainHeight(this.position.x, this.position.z);
+      if (this.position.y <= groundY + 1) {
+        this.position.y = groundY;
         this.justExploded = true;
         this.dying = false;
       }
+      this.mesh.position.set(this.position.x, this.position.y, this.position.z);
+      this.mesh.rotation.y = this.yaw;
+      this.mesh.rotation.x = this.pitch;
+      this.mesh.rotation.z = this.roll;
     } else {
       this.swayT += dt * 0.6;
+      this.mesh.position.x = this.position.x;
+      this.mesh.position.z = this.position.z;
       this.mesh.position.y = this.position.y + Math.sin(this.swayT) * 0.6;
     }
-    this.mesh.position.x = this.position.x;
-    this.mesh.position.z = this.position.z;
-    if (this.dying) this.mesh.position.y = this.position.y;
   }
 }
 

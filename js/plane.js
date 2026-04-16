@@ -33,28 +33,35 @@ export class Plane {
     this.dying = true;
     this.dyingTime = 0;
     this.alive = false;
+    // Preserve forward momentum at the moment of death so the plane arcs
+    // ballistically rather than losing all horizontal speed.
+    this.fallVx = this.forward.x * this.speed;
+    this.fallVy = this.forward.y * this.speed;
+    this.fallVz = this.forward.z * this.speed;
   }
 
   updateDying(dt) {
     this.dyingTime += dt;
     this.justCrashed = false;
-    // Spiral physics: lazier than enemies (pilot's "last ride").
+    // Visual-only spin.
     this.yaw += 2.3 * dt;
     this.pitch = Math.max(-1.15, this.pitch - 0.9 * dt);
     this.roll += 3.0 * dt;
     if (this.roll > Math.PI) this.roll -= Math.PI * 2;
 
-    const cp = Math.cos(this.pitch), sp = Math.sin(this.pitch);
-    const cy = Math.cos(this.yaw), sy = Math.sin(this.yaw);
-    const fx = -sy * cp;
-    const fy = sp;
-    const fz = -cy * cp;
+    // Ballistic fall: gravity + a little horizontal drag.
+    this.fallVy -= 48 * dt;
+    const drag = Math.exp(-0.3 * dt);
+    this.fallVx *= drag;
+    this.fallVz *= drag;
+    this.position.x += this.fallVx * dt;
+    this.position.y += this.fallVy * dt;
+    this.position.z += this.fallVz * dt;
 
-    const fallSpeed = this.speed * 0.75;
-    this.position.x += fx * fallSpeed * dt;
-    this.position.y += fy * fallSpeed * dt - 28 * dt;
-    this.position.z += fz * fallSpeed * dt;
-    this.forward.x = fx; this.forward.y = fy; this.forward.z = fz;
+    const vmag = Math.hypot(this.fallVx, this.fallVy, this.fallVz) || 1;
+    this.forward.x = this.fallVx / vmag;
+    this.forward.y = this.fallVy / vmag;
+    this.forward.z = this.fallVz / vmag;
 
     const groundY = WORLD.GROUND_Y + terrainHeight(this.position.x, this.position.z);
     if (this.position.y <= groundY + 2) {
