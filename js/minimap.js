@@ -21,7 +21,7 @@ export function worldToRadar(player, enemy, radius, range) {
   return { x, y };
 }
 
-export function drawMinimap(ctx, player, enemies, { cx, cy, radius }) {
+export function drawMinimap(ctx, player, enemies, { cx, cy, radius, allies }) {
   ctx.save();
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -50,6 +50,26 @@ export function drawMinimap(ctx, player, enemies, { cx, cy, radius }) {
     ctx.beginPath();
     ctx.arc(cx + p.x, cy + p.y, 6 * altScale, 0, Math.PI * 2);
     ctx.fill();
+  }
+
+  // Allied players (co-op) — blue triangles pointing in their heading.
+  if (allies) {
+    for (const a of allies) {
+      const ap = worldToRadar(player, { x: a.x, z: a.z }, radius, 2000);
+      ctx.fillStyle = '#4a8aff';
+      ctx.save();
+      ctx.translate(cx + ap.x, cy + ap.y);
+      // Rotate triangle to face ally's heading relative to player.
+      const relYaw = (a.yaw || 0) - player.yaw;
+      ctx.rotate(relYaw);
+      ctx.beginPath();
+      ctx.moveTo(0, -8);
+      ctx.lineTo(-5, 5);
+      ctx.lineTo(5, 5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
   }
 
   // Edge arrow if past soft return

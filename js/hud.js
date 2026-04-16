@@ -286,6 +286,7 @@ export function drawHud(ctx, state) {
   if (state.player) {
     drawMinimap(ctx, state.player, state.enemies, {
       cx: CANVAS_W - 200, cy: 200, radius: 180,
+      allies: state.allies,
     });
 
     const d = Math.hypot(state.player.position.x, state.player.position.z);
