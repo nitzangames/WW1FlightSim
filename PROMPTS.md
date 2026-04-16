@@ -285,3 +285,25 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > yes lets do it
 
 (→ enemy evasive dodge, ground artillery targets, weather system with fog/wind variation)
+
+## 53. Polygon count question
+
+> how many polygons is our terrain?
+
+(→ 16,200 triangles; ~22.5K total scene worst-case)
+
+## 54. Thumbnail mockups
+
+> lets work on a thumbnail. Show me on localhost 4 mockups to choose from
+
+## 55. Use 3D models in thumbnails
+
+> you should use the 3d models from the game in the thumbnails
+
+## 56. Add terrain to thumbnails
+
+> looks much better, dont use a black background. Make it look like its over the terrain
+
+## 57. Pick A, change black to sky blue
+
+> A is the best. Change the black to blue to match the sky in the game.

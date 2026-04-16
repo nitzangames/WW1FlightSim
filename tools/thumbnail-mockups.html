@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Thumbnail mockups — WW1 Flight Sim</title>
+<style>
+  body { margin: 0; background: #1a1a1a; font-family: -apple-system, sans-serif; color: #ddd; padding: 20px; }
+  h1 { margin: 0 0 6px; }
+  p.hint { opacity: 0.5; font-size: 13px; margin: 0 0 16px; }
+  .row { display: flex; gap: 20px; flex-wrap: wrap; }
+  .panel { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .wrap { position: relative; width: 512px; height: 512px; }
+  .wrap canvas { position: absolute; top: 0; left: 0; border-radius: 8px; box-shadow: 0 4px 24px rgba(0,0,0,0.6); }
+  .label { font-size: 16px; font-weight: bold; }
+  .sub { font-size: 12px; opacity: 0.6; max-width: 480px; text-align: center; }
+</style>
+</head>
+<body>
+<h1>Thumbnail mockups (3D models)</h1>
+<p class="hint">Uses actual game meshes. Pick one.</p>
+<div class="row">
+  <div class="panel">
+    <div class="wrap">
+      <canvas id="t1-3d" width="512" height="512"></canvas>
+      <canvas id="t1-txt" width="512" height="512"></canvas>
+    </div>
+    <div class="label">A — Dogfight chase</div>
+    <div class="sub">Red Fokker pursuing a khaki biplane, tracers in between. Side/above angle.</div>
+  </div>
+  <div class="panel">
+    <div class="wrap">
+      <canvas id="t2-3d" width="512" height="512"></canvas>
+      <canvas id="t2-txt" width="512" height="512"></canvas>
+    </div>
+    <div class="label">B — Cockpit POV</div>
+    <div class="sub">View from the pilot seat — dashboard visible, enemy ahead in crosshair.</div>
+  </div>
+  <div class="panel">
+    <div class="wrap">
+      <canvas id="t3-3d" width="512" height="512"></canvas>
+      <canvas id="t3-txt" width="512" height="512"></canvas>
+    </div>
+    <div class="label">C — Formation flyover</div>
+    <div class="sub">Three Fokkers in tight formation, dramatic low camera looking up.</div>
+  </div>
+  <div class="panel">
+    <div class="wrap">
+      <canvas id="t4-3d" width="512" height="512"></canvas>
+      <canvas id="t4-txt" width="512" height="512"></canvas>
+    </div>
+    <div class="label">D — Zeppelin takedown</div>
+    <div class="sub">Fokker banking past a huge zeppelin, dramatic angle.</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script type="module">
+import { buildFokker, buildBiplane, buildZeppelin } from '../js/models.js';
+
+function makeSky(topHex, botHex) {
+  const geo = new THREE.SphereGeometry(500, 14, 10);
+  geo.scale(-1, 1, 1);
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { top: { value: new THREE.Color(topHex) }, bot: { value: new THREE.Color(botHex) } },
+    vertexShader: 'varying float vY; void main(){ vY=normalize(position).y; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+    fragmentShader: 'uniform vec3 top; uniform vec3 bot; varying float vY; void main(){ float t=clamp((vY+0.2),0.0,1.0); gl_FragColor=vec4(mix(bot,top,t),1.0); }',
+    side: THREE.BackSide, depthWrite: false,
+  });
+  return new THREE.Mesh(geo, mat);
+}
+
+// Flat-shaded low-poly terrain for thumbnail backgrounds.
+function makeTerrain(size = 400, segs = 24, y = -12) {
+  const geo = new THREE.PlaneGeometry(size, size, segs, segs);
+  const pos = geo.attributes.position;
+  // Simple noise displacement.
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), yy = pos.getY(i);
+    const h = Math.sin(x * 0.03) * Math.cos(yy * 0.025) * 6
+            + Math.sin(x * 0.07 + yy * 0.05) * 3;
+    pos.setZ(i, h);
+  }
+  pos.needsUpdate = true;
+  const flat = geo.toNonIndexed();
+  flat.computeVertexNormals();
+  // Per-face green/brown colours.
+  const triPos = flat.attributes.position;
+  const colors = new Float32Array(triPos.count * 3);
+  const biomes = [
+    [0.28, 0.48, 0.2], [0.32, 0.52, 0.22], [0.4, 0.56, 0.24],
+    [0.5, 0.58, 0.28], [0.55, 0.5, 0.26], [0.45, 0.42, 0.22],
+  ];
+  const tmp = new THREE.Color();
+  for (let i = 0; i < triPos.count; i += 3) {
+    const avgH = (triPos.getZ(i) + triPos.getZ(i + 1) + triPos.getZ(i + 2)) / 3;
+    const idx = Math.min(biomes.length - 1, Math.max(0, Math.floor((avgH + 8) / 3)));
+    const b = biomes[idx];
+    tmp.setRGB(b[0], b[1], b[2]);
+    for (let k = 0; k < 3; k++) {
+      colors[(i + k) * 3]     = tmp.r;
+      colors[(i + k) * 3 + 1] = tmp.g;
+      colors[(i + k) * 3 + 2] = tmp.b;
+    }
+  }
+  flat.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  const mat = new THREE.MeshPhongMaterial({
+    vertexColors: true, flatShading: true, shininess: 0, specular: 0x000000,
+  });
+  const mesh = new THREE.Mesh(flat, mat);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.y = y;
+  return mesh;
+}
+
+function addLights(scene, sunColor = 0xfff0d0) {
+  const sun = new THREE.DirectionalLight(sunColor, 1.2);
+  sun.position.set(8, 12, 5);
+  scene.add(sun);
+  scene.add(new THREE.AmbientLight(0x556677, 0.5));
+}
+
+function addTracers(scene, x1, y1, z1, x2, y2, z2, count, color) {
+  const geo = new THREE.CylinderGeometry(0.06, 0.06, 1.2, 6);
+  geo.rotateX(Math.PI / 2);
+  const mat = new THREE.MeshBasicMaterial({ color, fog: false });
+  for (let i = 0; i < count; i++) {
+    const t = (i + 0.5) / count;
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(
+      x1 + (x2 - x1) * t + (Math.random() - 0.5) * 0.3,
+      y1 + (y2 - y1) * t + (Math.random() - 0.5) * 0.3,
+      z1 + (z2 - z1) * t + (Math.random() - 0.5) * 0.3
+    );
+    m.lookAt(x2, y2, z2);
+    scene.add(m);
+  }
+}
+
+function renderOnce(canvas3d, scene, camera, clearColor = 0x6fa6d6) {
+  const renderer = new THREE.WebGLRenderer({ canvas: canvas3d, antialias: true, preserveDrawingBuffer: true });
+  renderer.setSize(canvas3d.width, canvas3d.height, false);
+  renderer.setClearColor(clearColor);
+  renderer.render(scene, camera);
+}
+
+function overlayTitle(canvasId, topText, botText) {
+  const c = document.getElementById(canvasId);
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, 512, 512);
+  g.textAlign = 'center';
+  g.shadowColor = '#000';
+  g.shadowBlur = 10;
+  g.fillStyle = '#fff8e0';
+  g.font = 'bold 80px serif';
+  g.fillText(topText, 256, 88);
+  g.font = 'bold 60px serif';
+  g.fillText(botText, 256, 482);
+  g.shadowBlur = 0;
+}
+
+// ---- A: Dogfight chase ----
+{
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0xc8d4e0, 80, 350);
+  scene.add(makeSky(0x4a7ab0, 0xe8c880));
+  scene.add(makeTerrain(500, 28, -18));
+  addLights(scene);
+  // Player Fokker (red, closer to camera)
+  const fokker = buildFokker();
+  fokker.position.set(-2, -1, -3);
+  fokker.rotation.y = Math.PI * 0.85;
+  fokker.rotation.z = -0.15;
+  scene.add(fokker);
+  // Enemy biplane (fleeing, farther)
+  const enemy = buildBiplane({ variant: 'a' });
+  enemy.position.set(4, 1.5, -12);
+  enemy.rotation.y = Math.PI * 0.8;
+  enemy.rotation.z = 0.1;
+  scene.add(enemy);
+  // Tracers
+  addTracers(scene, 0, -0.5, -5, 3.5, 1, -10, 7, 0xffe060);
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 600);
+  camera.position.set(-6, 4, 6);
+  camera.lookAt(1, 0, -6);
+  renderOnce(document.getElementById('t1-3d'), scene, camera);
+  overlayTitle('t1-txt', 'WW1', 'FLIGHT SIM');
+}
+
+// ---- B: Cockpit POV ----
+{
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0xc8d4e0, 60, 250);
+  scene.add(makeSky(0x5a8ac0, 0xd4c098));
+  scene.add(makeTerrain(600, 30, -40));
+  addLights(scene);
+  // Enemy ahead
+  const enemy = buildBiplane({ variant: 'b' });
+  enemy.position.set(1, 0.5, -22);
+  enemy.rotation.y = Math.PI;
+  scene.add(enemy);
+  // Tracers from camera toward enemy
+  addTracers(scene, -0.3, -0.5, -3, 0.8, 0.3, -18, 5, 0xffe060);
+  const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 600);
+  camera.position.set(0, 0, 0);
+  camera.lookAt(0.5, 0, -20);
+  renderOnce(document.getElementById('t2-3d'), scene, camera);
+  // Overlay: title + cockpit HUD hints
+  const c = document.getElementById('t2-txt');
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, 512, 512);
+  // Crosshair
+  g.strokeStyle = '#ffd65a'; g.lineWidth = 3;
+  g.beginPath(); g.arc(268, 240, 22, 0, Math.PI * 2); g.stroke();
+  g.beginPath(); g.moveTo(258, 240); g.lineTo(278, 240);
+  g.moveTo(268, 230); g.lineTo(268, 250); g.stroke();
+  // Dashboard hint (dark bottom)
+  const dg = g.createLinearGradient(0, 370, 0, 512);
+  dg.addColorStop(0, 'rgba(90,55,25,0.0)');
+  dg.addColorStop(0.2, 'rgba(90,55,25,0.85)');
+  dg.addColorStop(1, 'rgba(50,30,12,0.95)');
+  g.fillStyle = dg;
+  g.fillRect(0, 370, 512, 142);
+  // Mini gauges
+  for (const gx of [130, 256, 382]) {
+    g.fillStyle = '#b38b3a';
+    g.beginPath(); g.arc(gx, 445, 28, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#111';
+    g.beginPath(); g.arc(gx, 445, 23, 0, Math.PI * 2); g.fill();
+  }
+  // Gun breeches
+  for (const bx of [220, 296]) {
+    g.fillStyle = '#2a2e36';
+    g.beginPath(); g.arc(bx, 376, 14, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#050507';
+    g.beginPath(); g.arc(bx, 376, 8, 0, Math.PI * 2); g.fill();
+  }
+  // Title
+  g.textAlign = 'center';
+  g.shadowColor = '#000'; g.shadowBlur = 10;
+  g.fillStyle = '#fff8e0';
+  g.font = 'bold 80px serif';
+  g.fillText('WW1', 256, 80);
+  g.font = 'bold 60px serif';
+  g.fillText('FLIGHT SIM', 256, 510);
+  g.shadowBlur = 0;
+}
+
+// ---- C: Formation flyover ----
+{
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0xc0886a, 50, 250);
+  scene.add(makeSky(0x1a1a3a, 0xe87040));
+  scene.add(makeTerrain(400, 22, -20));
+  const sun = new THREE.DirectionalLight(0xffa040, 1.5);
+  sun.position.set(-3, -4, 8);
+  scene.add(sun);
+  scene.add(new THREE.AmbientLight(0x443322, 0.6));
+  // 3 Fokkers in V formation, from below
+  const f1 = buildFokker(); f1.position.set(0, 8, -5); f1.rotation.y = Math.PI; scene.add(f1);
+  const f2 = buildFokker(); f2.position.set(-5, 7, -9); f2.rotation.y = Math.PI; scene.add(f2);
+  const f3 = buildFokker(); f3.position.set(5, 7, -9); f3.rotation.y = Math.PI; scene.add(f3);
+  const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 600);
+  camera.position.set(0, -4, 4);
+  camera.lookAt(0, 8, -6);
+  renderOnce(document.getElementById('t3-3d'), scene, camera);
+  overlayTitle('t3-txt', 'WW1', 'FLIGHT SIM');
+}
+
+// ---- D: Zeppelin takedown ----
+{
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x8a4020, 60, 300);
+  scene.add(makeSky(0x2a1008, 0xc86020));
+  scene.add(makeTerrain(500, 26, -25));
+  const sun = new THREE.DirectionalLight(0xffaa50, 1.3);
+  sun.position.set(5, 10, -3);
+  scene.add(sun);
+  scene.add(new THREE.AmbientLight(0x553322, 0.5));
+  // Zeppelin
+  const zep = buildZeppelin();
+  zep.position.set(8, 5, -30);
+  zep.rotation.y = Math.PI * 0.7;
+  zep.rotation.z = -0.2; // tilting down
+  scene.add(zep);
+  // Fire sprites around the zeppelin
+  const fireMat = new THREE.SpriteMaterial({
+    color: 0xffa030,
+    transparent: true,
+    opacity: 0.8,
+    blending: THREE.AdditiveBlending,
+  });
+  for (let i = 0; i < 25; i++) {
+    const s = new THREE.Sprite(fireMat);
+    s.position.set(
+      8 + (Math.random() - 0.5) * 30,
+      5 + (Math.random() - 0.5) * 8,
+      -30 + (Math.random() - 0.5) * 30
+    );
+    const sz = 3 + Math.random() * 5;
+    s.scale.set(sz, sz, sz);
+    scene.add(s);
+  }
+  // Fokker banking away (foreground)
+  const fokker = buildFokker();
+  fokker.position.set(-4, -2, -4);
+  fokker.rotation.y = Math.PI * 1.3;
+  fokker.rotation.z = 0.5; // banking
+  scene.add(fokker);
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 600);
+  camera.position.set(-8, 2, 8);
+  camera.lookAt(4, 3, -20);
+  renderOnce(document.getElementById('t4-3d'), scene, camera);
+  overlayTitle('t4-txt', 'WW1', 'FLIGHT SIM');
+}
+</script>
+</body>
+</html>
