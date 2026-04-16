@@ -3,13 +3,13 @@ import { createRenderer } from './renderer.js';
 import { buildWorld } from './world.js';
 import { Joystick } from './input.js';
 import { Plane } from './plane.js';
-import { buildFokker, buildCockpit, createSmokePool, emitSmoke, updateSmoke, createScorchPool, placeScorch, createFirePool, emitFire, updateFire } from './models.js';
+import { buildFokker, buildCockpit, buildAirfield, createSmokePool, emitSmoke, updateSmoke, createScorchPool, placeScorch, createFirePool, emitFire, updateFire } from './models.js';
 import { terrainHeight } from './world.js';
 import { drawHud } from './hud.js';
 import { Spawner } from './enemy-spawner.js';
 import { Enemy } from './enemy.js';
 import { Guns, EnemyTracers } from './weapons.js';
-import { ENEMY, WORLD } from './config.js';
+import { PLAYER, ENEMY, WORLD } from './config.js';
 import { Balloon, Zeppelin, Artillery } from './targets.js';
 import { Weather } from './weather.js';
 import { GameState, STATE } from './game.js';
@@ -38,6 +38,11 @@ const planeMesh = buildFokker();
 planeMesh.visible = false; // hidden from cockpit — we're inside it
 planeMesh.rotation.order = 'YXZ';
 scene.add(planeMesh);
+
+// Airfield at origin — sits on the flattened terrain zone.
+const airfield = buildAirfield();
+airfield.position.y = WORLD.GROUND_Y;
+scene.add(airfield);
 
 const weather = new Weather(scene);
 const enemies = [];
@@ -111,10 +116,13 @@ overlayCanvas.addEventListener('pointercancel', () => joystick.up());
 function resetGameObjects() {
   for (const e of enemies) scene.remove(e.mesh);
   enemies.length = 0;
-  plane.position.x = 0; plane.position.y = 200; plane.position.z = 0;
+  // Start on the runway: near the end of the strip, facing down the runway (-Z).
+  const runwayY = WORLD.GROUND_Y + terrainHeight(0, 90) + 1.5;
+  plane.position.x = 0; plane.position.y = runwayY; plane.position.z = 90;
   plane.pitch = 0; plane.roll = 0; plane.yaw = 0;
-  plane.hp = 100; plane.alive = true; plane.damageFlash = 0;
+  plane.hp = PLAYER.HP; plane.alive = true; plane.damageFlash = 0;
   plane.dying = false; plane.justCrashed = false;
+  plane._takeoffSpeed = 0;
   gs.reset();
 
   // Static targets: 3 tethered balloons at 400-700m, low altitude; 1 zeppelin
@@ -320,9 +328,33 @@ function loop(t) {
   enemyTracers.update(dt);
 
   const isPlaying = gs.state === STATE.PLAYING;
-  if (isPlaying && !wasPlaying) startWind();
-  if (!isPlaying && wasPlaying) stopWind();
-  wasPlaying = isPlaying;
+  const isTakeoff = gs.state === STATE.TAKEOFF;
+  if ((isPlaying || isTakeoff) && !wasPlaying) startWind();
+  if (!(isPlaying || isTakeoff) && wasPlaying) stopWind();
+  wasPlaying = isPlaying || isTakeoff;
+
+  // ---- Takeoff sequence: auto-accelerate down the runway, lift off, hand to PLAYING ----
+  if (isTakeoff) {
+    gs.takeoffTime += dt;
+    // Accelerate along the runway.
+    if (!plane._takeoffSpeed) plane._takeoffSpeed = 0;
+    plane._takeoffSpeed = Math.min(PLAYER.SPEED, plane._takeoffSpeed + 12 * dt);
+    // Roll forward on the ground.
+    const groundY = WORLD.GROUND_Y + terrainHeight(plane.position.x, plane.position.z) + 1.5;
+    plane.position.z -= plane._takeoffSpeed * dt;
+    plane.position.y = groundY;
+    // At ~70% takeoff speed, pitch up gently and lift off.
+    if (plane._takeoffSpeed > PLAYER.SPEED * 0.7) {
+      plane.pitch += 0.4 * dt;
+      plane.position.y = groundY + (plane._takeoffSpeed - PLAYER.SPEED * 0.7) * 2;
+    }
+    // Once clearly airborne (20m above ground), transition to PLAYING.
+    if (plane.position.y > groundY + 20) {
+      gs.state = STATE.PLAYING;
+      plane.position.y = groundY + 25;
+    }
+    syncCameraToPlane();
+  }
 
   let gunState = null;
   if (isPlaying) {
@@ -331,7 +363,6 @@ function loop(t) {
       plane.updateDying(dt);
     } else {
       plane.update(dt, joystick.value());
-      // Wind gusts nudge the plane's yaw slightly.
       plane.yaw += weather.update(dt);
     }
     syncCameraToPlane();

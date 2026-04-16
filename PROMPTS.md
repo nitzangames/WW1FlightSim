@@ -323,3 +323,11 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 ## 61. Deploy
 
 > lets deploy it!
+
+## 62. Allies on minimap
+
+> If I am playing coop, I want to the other player on the map.
+
+## 63. Airfield + takeoff
+
+> Can you add an airfield and have the player takeoff from an airfield at start?

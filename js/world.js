@@ -28,6 +28,12 @@ function smoothstep(a, b, x) {
 // Sample a terrain height at world-space (x, z). Exported so future code can place things on the surface.
 export function terrainHeight(x, z) {
   const r = Math.hypot(x, z);
+
+  // Flatten the airfield zone near the origin. The runway is ~220m along Z
+  // and ~80m wide. Smoothly blend back to normal terrain outside that area.
+  const airfieldBlend = smoothstep(25, 60, Math.abs(x)) *
+                        smoothstep(120, 180, Math.abs(z));
+
   // Base rolling hills, more pronounced than before.
   const hills =
     smoothNoise(x * 0.0015, z * 0.0015) * 55 +
@@ -40,7 +46,7 @@ export function terrainHeight(x, z) {
     smoothstep(1600, 3200, r) *
     (smoothNoise(x * 0.004, z * 0.004) * 120 +
      smoothNoise(x * 0.012, z * 0.012) * 45);
-  return hills + edgeBoost + mountainNoise;
+  return (hills + edgeBoost + mountainNoise) * airfieldBlend;
 }
 
 export function buildWorld(scene) {

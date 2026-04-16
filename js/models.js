@@ -146,6 +146,67 @@ export function emitSmoke(pool, x, y, z, maxLife = 1.0) {
   slot.maxLife = maxLife;
 }
 
+// WW1 grass airfield: flat runway strip, two hangars, control tower, windsock.
+export function buildAirfield() {
+  const group = new THREE.Group();
+  const dirt = new THREE.MeshLambertMaterial({ color: 0x5a4a30 });
+  const grass = new THREE.MeshLambertMaterial({ color: 0x4a6a28 });
+  const wood = new THREE.MeshLambertMaterial({ color: 0x6a5a42 });
+  const roof = new THREE.MeshLambertMaterial({ color: 0x4a3a28 });
+  const white = new THREE.MeshBasicMaterial({ color: 0xdddddd });
+  const metal = new THREE.MeshLambertMaterial({ color: 0x888888 });
+
+  // Grass field base (wider than runway)
+  const field = new THREE.Mesh(new THREE.BoxGeometry(80, 0.15, 260), grass);
+  field.position.y = 0.08;
+  group.add(field);
+
+  // Dirt runway strip, 12m wide × 220m long
+  const runway = new THREE.Mesh(new THREE.BoxGeometry(12, 0.2, 220), dirt);
+  runway.position.y = 0.12;
+  group.add(runway);
+
+  // White center dashes
+  for (let z = -100; z <= 100; z += 14) {
+    const dash = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.22, 6), white);
+    dash.position.set(0, 0.14, z);
+    group.add(dash);
+  }
+
+  // Two hangars flanking the runway
+  for (const side of [-1, 1]) {
+    const hangar = new THREE.Mesh(new THREE.BoxGeometry(14, 7, 22), wood);
+    hangar.position.set(side * 22, 3.5, -40);
+    group.add(hangar);
+    const roofM = new THREE.Mesh(new THREE.BoxGeometry(16, 0.6, 24), roof);
+    roofM.position.set(side * 22, 7.3, -40);
+    group.add(roofM);
+    // Door opening (darker rectangle)
+    const door = new THREE.Mesh(new THREE.BoxGeometry(8, 5, 0.3), new THREE.MeshLambertMaterial({ color: 0x1a1a1a }));
+    door.position.set(side * 22, 2.5, -40 + 11.2 * (-side > 0 ? 1 : -1));
+    group.add(door);
+  }
+
+  // Control tower
+  const tower = new THREE.Mesh(new THREE.BoxGeometry(6, 12, 6), wood);
+  tower.position.set(28, 6, 30);
+  group.add(tower);
+  const towerRoof = new THREE.Mesh(new THREE.BoxGeometry(7, 0.5, 7), roof);
+  towerRoof.position.set(28, 12.25, 30);
+  group.add(towerRoof);
+
+  // Windsock pole + sock
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 9, 6), metal);
+  pole.position.set(-28, 4.5, 50);
+  group.add(pole);
+  const sock = new THREE.Mesh(new THREE.ConeGeometry(0.5, 2.5, 6), new THREE.MeshLambertMaterial({ color: 0xff6030 }));
+  sock.rotation.z = -Math.PI / 2;
+  sock.position.set(-27, 9, 50);
+  group.add(sock);
+
+  return group;
+}
+
 // Caquot triple-fin observation balloon. Tether hangs ~280m below the basket.
 export function buildBalloon() {
   const group = new THREE.Group();

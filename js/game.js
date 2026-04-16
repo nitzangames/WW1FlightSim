@@ -1,4 +1,4 @@
-export const STATE = { MENU: 'menu', PLAYING: 'playing', GAMEOVER: 'gameover' };
+export const STATE = { MENU: 'menu', TAKEOFF: 'takeoff', PLAYING: 'playing', GAMEOVER: 'gameover' };
 
 const RANKS = [
   { min: 0,  title: 'Cadet' },
@@ -30,7 +30,8 @@ export class GameState {
   }
 
   startRun() {
-    this.state = STATE.PLAYING;
+    this.state = STATE.TAKEOFF;
+    this.takeoffTime = 0;
     this.kills = 0;
     this.planeKills = 0;
     this.balloonKills = 0;

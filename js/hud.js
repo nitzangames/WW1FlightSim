@@ -235,7 +235,7 @@ export function drawHud(ctx, state) {
     drawWaypoint(ctx, state.waypoint);
   }
 
-  // Cockpit frame (covers lower ~32% of screen when PLAYING/GAMEOVER)
+  // Cockpit frame (visible during takeoff, playing, and gameover)
   if (state.player && !state.menu) {
     drawCockpit(ctx, state);
   }
