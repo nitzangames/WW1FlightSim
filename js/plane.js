@@ -21,6 +21,7 @@ export class Plane {
     this._targetRoll = 0;
 
     this.hp = PLAYER.HP;
+    this.maxHp = PLAYER.HP;
     this.alive = true;
     this.damageFlash = 0;
     // Death spiral state (mirrors Enemy behavior).

@@ -16,6 +16,7 @@ export class Balloon {
     this.pitch = 0;
     this.roll = 0;
     this.hp = 40;
+    this.maxHp = 40;
     this.speed = 0;
     this.alive = true;
     this.dying = false;
@@ -84,6 +85,7 @@ export class Zeppelin {
     this.roll = 0;
     this.forward = { x: -Math.sin(this.yaw), y: 0, z: -Math.cos(this.yaw) };
     this.hp = 250;
+    this.maxHp = 250;
     this.speed = 6; // very slow patrol
     this.alive = true;
     this.dying = false;

@@ -245,3 +245,9 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > when zepplins and balloons blow up, they show fall to the ground on fire and only disappear when they hit the ground
 
 (→ balloons now tumble toward the ground instead of popping midair; fire particle pool added (orange sprites with additive blending); planes + airships emit fire+smoke trail while dying until ground impact; tether is hidden when the balloon detaches)
+
+## 46. More dramatic airship fire + keep plane momentum
+
+> plane momentum works great. Zepplins and Balloons still don't look good. They both seem to disappear when they die. Fire looks great, we should add it to Balloons and Zepplins. They should also have fire billowing when they are hit and close to dying.
+
+(→ big fireball burst at moment of death (20 sprites for zep, 12 for balloon), fire scatter scaled to target size during fall (±25m zep, ±3m balloon), low-HP targets emit continuous fire+smoke while still alive; fire pool bumped to 200; maxHp stored on all targets)

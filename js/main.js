@@ -213,22 +213,39 @@ function loop(t) {
         e.startDying();
         gs.kills += e.killValue || 1;
         playKill();
-        // Initial trail burst as the plane "catches fire"
-        for (let i = 0; i < 4; i++) {
-          emitSmoke(smokePool, e.position.x, e.position.y, e.position.z, 1.4);
+        // Initial "catches fire" burst — scaled to size.
+        const ignite = e.type === 'zeppelin' ? 28 : e.type === 'balloon' ? 14 : 4;
+        const igniteSpread = e.type === 'zeppelin' ? 22 : e.type === 'balloon' ? 4 : 2;
+        for (let i = 0; i < ignite; i++) {
+          emitSmoke(smokePool,
+            e.position.x + (Math.random() - 0.5) * igniteSpread,
+            e.position.y + (Math.random() - 0.5) * igniteSpread,
+            e.position.z + (Math.random() - 0.5) * igniteSpread,
+            1.8);
+          if (e.type === 'balloon' || e.type === 'zeppelin') {
+            emitFire(firePool,
+              e.position.x + (Math.random() - 0.5) * igniteSpread,
+              e.position.y + (Math.random() - 0.5) * igniteSpread,
+              e.position.z + (Math.random() - 0.5) * igniteSpread,
+              0.85);
+          }
         }
       }
       if (e.justExploded) {
-        // Ground impact: big fireball of smoke + explosion sound + scorch mark.
+        // Ground impact: big fireball + explosion sound + scorch. Scale to size.
         playKill();
-        for (let i = 0; i < 30; i++) {
-          const ox = e.position.x + (Math.random() - 0.5) * 16;
-          const oy = e.position.y + Math.random() * 6;
-          const oz = e.position.z + (Math.random() - 0.5) * 16;
+        const boom = e.type === 'zeppelin' ? 70 : e.type === 'balloon' ? 40 : 30;
+        const boomSpread = e.type === 'zeppelin' ? 32 : e.type === 'balloon' ? 20 : 16;
+        const scorchSize = e.type === 'zeppelin' ? 3.0 : e.type === 'balloon' ? 1.6 : 1.0 + Math.random() * 0.4;
+        for (let i = 0; i < boom; i++) {
+          const ox = e.position.x + (Math.random() - 0.5) * boomSpread;
+          const oy = e.position.y + Math.random() * 10;
+          const oz = e.position.z + (Math.random() - 0.5) * boomSpread;
           emitSmoke(smokePool, ox, oy, oz, 2.2);
+          if (i < boom * 0.6) emitFire(firePool, ox, oy, oz, 0.7);
         }
         const gy = WORLD.GROUND_Y + terrainHeight(e.position.x, e.position.z);
-        placeScorch(scorchPool, e.position.x, gy, e.position.z, 1.0 + Math.random() * 0.4);
+        placeScorch(scorchPool, e.position.x, gy, e.position.z, scorchSize);
       }
     }
 
@@ -237,28 +254,46 @@ function loop(t) {
       smokeTimer = 0.05;
       for (const e of enemies) {
         if (e.dying) {
-          // Big burning wreck: thick smoke AND multiple fire particles per
-          // tick so it visibly falls on fire. Zeppelin is huge so extra.
-          const jitter = e.type === 'zeppelin' ? 6 : 2;
-          const fireCount = e.type === 'zeppelin' ? 4 : 2;
-          emitSmoke(smokePool,
-            e.position.x - e.forward.x * 1.5,
-            e.position.y - e.forward.y * 1.5,
-            e.position.z - e.forward.z * 1.5,
-            1.8);
+          // Fire scatter scaled to target size so big targets look properly
+          // engulfed instead of having one tiny flame at centre.
+          const jitter = e.type === 'zeppelin' ? 25 : e.type === 'balloon' ? 3.5 : 2;
+          const fireCount = e.type === 'zeppelin' ? 8 : e.type === 'balloon' ? 5 : 2;
+          const smokeCount = e.type === 'zeppelin' ? 3 : 2;
+          for (let i = 0; i < smokeCount; i++) {
+            emitSmoke(smokePool,
+              e.position.x + (Math.random() - 0.5) * jitter,
+              e.position.y + (Math.random() - 0.5) * jitter,
+              e.position.z + (Math.random() - 0.5) * jitter,
+              1.8);
+          }
           for (let i = 0; i < fireCount; i++) {
             emitFire(firePool,
               e.position.x + (Math.random() - 0.5) * jitter,
               e.position.y + (Math.random() - 0.5) * jitter,
               e.position.z + (Math.random() - 0.5) * jitter,
-              0.55);
+              0.6);
           }
-        } else if (e.alive && e.hp < 30 && e.type === 'plane') {
-          emitSmoke(smokePool,
-            e.position.x - e.forward.x * 1.5,
-            e.position.y - e.forward.y * 1.5,
-            e.position.z - e.forward.z * 1.5,
-            1.0);
+        } else if (e.alive) {
+          // Damaged-but-alive: airships flame earlier than planes because
+          // they're big hydrogen sacks; planes just start to smoke at <50%.
+          const hpPct = e.hp / (e.maxHp || e.hp || 1);
+          const isAirship = e.type === 'balloon' || e.type === 'zeppelin';
+          const burnThresh = isAirship ? 0.6 : 0.5;
+          if (hpPct < burnThresh) {
+            const j = e.type === 'zeppelin' ? 18 : e.type === 'balloon' ? 2 : 1.5;
+            emitSmoke(smokePool,
+              e.position.x + (Math.random() - 0.5) * j,
+              e.position.y + (Math.random() - 0.5) * j,
+              e.position.z + (Math.random() - 0.5) * j,
+              1.2);
+            if (hpPct < (isAirship ? 0.5 : 0.3)) {
+              emitFire(firePool,
+                e.position.x + (Math.random() - 0.5) * j,
+                e.position.y + (Math.random() - 0.5) * j,
+                e.position.z + (Math.random() - 0.5) * j,
+                0.45);
+            }
+          }
         }
       }
       if (plane.dying) {
@@ -276,6 +311,9 @@ function loop(t) {
           plane.position.y - plane.forward.y * 2,
           plane.position.z - plane.forward.z * 2,
           1.2);
+        if (plane.hp < 15) {
+          emitFire(firePool, plane.position.x, plane.position.y, plane.position.z, 0.4);
+        }
       }
     }
 

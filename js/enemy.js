@@ -14,6 +14,7 @@ export class Enemy {
     const hpMult = variant === 'ace' ? 1.7 : 1.0;
     const speedMult = variant === 'ace' ? 1.1 : 1.0;
     this.hp = ENEMY.HP * hpMult;
+    this.maxHp = this.hp;
     this.speed = ENEMY.SPEED * speedMult;
     this.mode = mode;
     this.alive = true;

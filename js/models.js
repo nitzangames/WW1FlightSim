@@ -268,7 +268,7 @@ function makeFireCanvas() {
   return c;
 }
 
-export function createFirePool(scene, size = 120) {
+export function createFirePool(scene, size = 220) {
   const tex = new THREE.CanvasTexture(makeFireCanvas());
   const mat = new THREE.SpriteMaterial({
     map: tex, transparent: true, opacity: 0.95, depthWrite: false,
@@ -278,7 +278,7 @@ export function createFirePool(scene, size = 120) {
   for (let i = 0; i < size; i++) {
     const s = new THREE.Sprite(mat.clone());
     s.visible = false;
-    s.scale.set(2.2, 2.2, 2.2);
+    s.scale.set(3, 3, 3);
     scene.add(s);
     pool.push({ sprite: s, life: 0, maxLife: 1 });
   }
@@ -300,8 +300,8 @@ export function updateFire(pool, dt) {
     if (!s.sprite.visible) continue;
     s.life -= dt;
     s.sprite.material.opacity = Math.max(0, 0.95 * s.life / s.maxLife);
-    const grow = 1 + (1 - s.life / s.maxLife) * 1.6;
-    s.sprite.scale.set(2.2 * grow, 2.2 * grow, 2.2 * grow);
+    const grow = 1 + (1 - s.life / s.maxLife) * 1.8;
+    s.sprite.scale.set(3 * grow, 3 * grow, 3 * grow);
     if (s.life <= 0) s.sprite.visible = false;
   }
 }
