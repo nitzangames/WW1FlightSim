@@ -217,23 +217,24 @@ export function buildWorld(scene) {
   const cloudTex = new THREE.CanvasTexture(cloudCanvas);
   const cloudMat = new THREE.SpriteMaterial({ map: cloudTex, transparent: true, fog: true, depthWrite: false });
 
-  const CLOUD_CLUSTERS = 15;
-  const PUFFS_PER_CLOUD = 5;
+  const CLOUD_CLUSTERS = 18;
+  const PUFFS_PER_CLOUD = 10;
   for (let c = 0; c < CLOUD_CLUSTERS; c++) {
     const ca = Math.random() * Math.PI * 2;
     const cr = 250 + Math.random() * 1400;
     const cx = Math.cos(ca) * cr;
-    const cy = 180 + Math.random() * 300;
+    const cy = 180 + Math.random() * 280;
     const cz = Math.sin(ca) * cr;
-    const baseSize = 90 + Math.random() * 80;
+    const baseSize = 130 + Math.random() * 100;
     for (let p = 0; p < PUFFS_PER_CLOUD; p++) {
       const s = new THREE.Sprite(cloudMat);
-      const ox = (Math.random() - 0.5) * baseSize * 0.9;
-      const oy = (Math.random() - 0.5) * baseSize * 0.25;
-      const oz = (Math.random() - 0.5) * baseSize * 0.9;
+      // Wider horizontal scatter, flatter vertical — cumulus shape.
+      const ox = (Math.random() - 0.5) * baseSize * 1.3;
+      const oy = (Math.random() - 0.3) * baseSize * 0.3;
+      const oz = (Math.random() - 0.5) * baseSize * 1.3;
       s.position.set(cx + ox, cy + oy, cz + oz);
-      const puffSize = baseSize * (0.65 + Math.random() * 0.5);
-      s.scale.set(puffSize, puffSize, puffSize);
+      const puffSize = baseSize * (0.7 + Math.random() * 0.6);
+      s.scale.set(puffSize, puffSize * 0.7, puffSize);
       scene.add(s);
     }
   }
