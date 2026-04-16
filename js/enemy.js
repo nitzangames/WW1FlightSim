@@ -28,6 +28,9 @@ export class Enemy {
     this.fireTimer = 0;
     this.justFired = false;
     this.lastShotHit = false;
+    // Smoothed steering target — prevents snapping when switching
+    // between chase / dodge / break-off modes.
+    this._smoothTarget = null;
     // Evasive dodge state.
     this.dodgeTimer = 2 + Math.random() * 3; // time until next dodge check
     this.dodging = false;
@@ -116,26 +119,41 @@ export class Enemy {
       }
     }
 
-    // Compute desired heading
-    const targetPoint = this.dodging ? this.computeDodgePoint(player) : this.computeTargetPoint(player);
-    const dx = targetPoint.x - this.position.x;
-    const dy = targetPoint.y - this.position.y;
-    const dz = targetPoint.z - this.position.z;
+    // Compute desired heading — smoothed to prevent snapping on mode switches.
+    const rawTarget = this.dodging ? this.computeDodgePoint(player) : this.computeTargetPoint(player);
+    if (!this._smoothTarget) this._smoothTarget = { ...rawTarget };
+    const tLerp = Math.min(1, 5.0 * dt);
+    this._smoothTarget.x += (rawTarget.x - this._smoothTarget.x) * tLerp;
+    this._smoothTarget.y += (rawTarget.y - this._smoothTarget.y) * tLerp;
+    this._smoothTarget.z += (rawTarget.z - this._smoothTarget.z) * tLerp;
+
+    const dx = this._smoothTarget.x - this.position.x;
+    const dy = this._smoothTarget.y - this.position.y;
+    const dz = this._smoothTarget.z - this.position.z;
     const dist = Math.hypot(dx, dy, dz) || 1;
     const nx = dx / dist, ny = dy / dist, nz = dz / dist;
 
     const desiredYaw = Math.atan2(-nx, -nz);
     const desiredPitch = Math.asin(Math.max(-1, Math.min(1, ny)));
 
-    // Limit turn rate
+    // Smooth exponential turn (ease in/out) with a hard cap so we never
+    // exceed the physical turn rate. Much more natural than the old
+    // constant-speed step function.
     const turnCap = ENEMY.TURN_CAP;
+    const turnSmooth = 3.0;
     let dYaw = desiredYaw - this.yaw;
     dYaw = Math.atan2(Math.sin(dYaw), Math.cos(dYaw));
-    this.yaw += Math.sign(dYaw) * Math.min(Math.abs(dYaw), turnCap * dt);
+    const yawStep = dYaw * turnSmooth * dt;
+    const maxYaw = turnCap * dt;
+    this.yaw += Math.abs(yawStep) > maxYaw ? Math.sign(yawStep) * maxYaw : yawStep;
+
     let dPitch = desiredPitch - this.pitch;
-    this.pitch += Math.sign(dPitch) * Math.min(Math.abs(dPitch), turnCap * 0.7 * dt);
-    // Bank visually into turns
-    this.roll += (dYaw * 1.5 - this.roll) * 0.08;
+    const pitchStep = dPitch * turnSmooth * 0.7 * dt;
+    const maxPitch = turnCap * 0.7 * dt;
+    this.pitch += Math.abs(pitchStep) > maxPitch ? Math.sign(pitchStep) * maxPitch : pitchStep;
+
+    // Bank into turns — dt-scaled so it's frame-rate independent.
+    this.roll += (dYaw * 1.5 - this.roll) * 4.0 * dt;
     this.roll = Math.max(-1.0, Math.min(1.0, this.roll));
 
     // Forward integration
