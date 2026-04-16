@@ -26,6 +26,11 @@ export class Enemy {
     this.fireTimer = 0;
     this.justFired = false;
     this.lastShotHit = false;
+    // Evasive dodge state.
+    this.dodgeTimer = 2 + Math.random() * 3; // time until next dodge check
+    this.dodging = false;
+    this.dodgeTime = 0;
+    this.dodgeSide = 1; // +1 or -1
     // Death spiral state.
     this.dying = false;
     this.dyingTime = 0;
@@ -84,8 +89,33 @@ export class Enemy {
       this.updateDying(dt);
       return;
     }
+    // Evasive dodge: if the player is aiming near this enemy and close,
+    // occasionally break hard to one side to shake the lock.
+    if (this.dodging) {
+      this.dodgeTime -= dt;
+      if (this.dodgeTime <= 0) this.dodging = false;
+    } else {
+      this.dodgeTimer -= dt;
+      if (this.dodgeTimer <= 0) {
+        this.dodgeTimer = 2.5 + Math.random() * 2.5;
+        // Check: is player roughly aiming at me and close?
+        const toDx = this.position.x - player.position.x;
+        const toDy = this.position.y - player.position.y;
+        const toDz = this.position.z - player.position.z;
+        const toDist = Math.hypot(toDx, toDy, toDz);
+        if (toDist < 350 && toDist > 30) {
+          const dot = (toDx * player.forward.x + toDy * player.forward.y + toDz * player.forward.z) / toDist;
+          if (dot > 0.85) { // player facing within ~30° of me
+            this.dodging = true;
+            this.dodgeTime = 1.2 + Math.random() * 0.8;
+            this.dodgeSide = Math.random() < 0.5 ? 1 : -1;
+          }
+        }
+      }
+    }
+
     // Compute desired heading
-    const targetPoint = this.computeTargetPoint(player);
+    const targetPoint = this.dodging ? this.computeDodgePoint(player) : this.computeTargetPoint(player);
     const dx = targetPoint.x - this.position.x;
     const dy = targetPoint.y - this.position.y;
     const dz = targetPoint.z - this.position.z;
@@ -148,6 +178,19 @@ export class Enemy {
     }
 
     this.syncMesh();
+  }
+
+  // Evasive dodge: fly hard to one side + climb to break player's aim.
+  computeDodgePoint(_player) {
+    const side = this.dodgeSide;
+    // Perpendicular to current heading: rotate forward by 90° around Y.
+    const rx = Math.cos(this.yaw + side * Math.PI / 2);
+    const rz = -Math.sin(this.yaw + side * Math.PI / 2);
+    return {
+      x: this.position.x + rx * 100 + this.forward.x * 60,
+      y: this.position.y + 40,
+      z: this.position.z + rz * 100 + this.forward.z * 60,
+    };
   }
 
   computeTargetPoint(player) {

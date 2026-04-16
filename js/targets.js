@@ -1,4 +1,4 @@
-import { buildBalloon, buildZeppelin } from './models.js';
+import { buildBalloon, buildZeppelin, buildArtillery } from './models.js';
 import { WORLD } from './config.js';
 import { terrainHeight } from './world.js';
 
@@ -164,3 +164,76 @@ export class Zeppelin {
     this.mesh.rotation.z = this.roll;
   }
 }
+
+// Ground artillery: stationary gun emplacement. Fires slow shells at the
+// player when within range. Low HP — one good strafing run kills it.
+export class Artillery {
+  constructor({ x, z }) {
+    this.type = 'artillery';
+    this.killValue = 1;
+    const y = WORLD.GROUND_Y + terrainHeight(x, z) + 0.5;
+    this.position = { x, y, z };
+    this.forward = { x: 0, y: 0, z: -1 };
+    this.yaw = Math.random() * Math.PI * 2;
+    this.pitch = 0;
+    this.roll = 0;
+    this.hp = 25;
+    this.maxHp = 25;
+    this.speed = 0;
+    this.alive = true;
+    this.dying = false;
+    this.dyingTime = 0;
+    this.justExploded = false;
+    this.firing = false;
+    this.justFired = false;
+    this.lastShotHit = false;
+    this.mode = 'artillery';
+    this.variant = 'artillery';
+    this.fireTimer = 1 + Math.random() * 2;
+    this.mesh = buildArtillery();
+    this.mesh.position.set(x, y, z);
+    this.mesh.rotation.y = this.yaw;
+  }
+
+  startDying() {
+    this.dying = true;
+    this.dyingTime = 0;
+  }
+
+  update(dt, player) {
+    this.justFired = false;
+    this.justExploded = false;
+    if (this.dying) {
+      this.dyingTime += dt;
+      if (this.dyingTime > 0.3) {
+        this.justExploded = true;
+        this.alive = false;
+        this.dying = false;
+      }
+      return;
+    }
+    // Fire at player if within range (~500m) and above ground (not behind terrain)
+    const dx = player.position.x - this.position.x;
+    const dy = player.position.y - this.position.y;
+    const dz = player.position.z - this.position.z;
+    const dist = Math.hypot(dx, dy, dz);
+    this.firing = dist < 500 && dy > 10; // only if player is above
+    if (this.firing) {
+      this.fireTimer -= dt;
+      if (this.fireTimer <= 0) {
+        this.fireTimer = 1.5 + Math.random() * 1.5; // slow rate
+        this.justFired = true;
+        // ~35% hit chance
+        if (player.alive && Math.random() < 0.35) {
+          player.hp -= 2.5;
+          player.damageFlash = Math.min(1, (player.damageFlash || 0) + 0.4);
+          this.lastShotHit = true;
+        }
+      }
+      // Aim toward player
+      this.yaw = Math.atan2(-dx, -dz);
+      this.mesh.rotation.y = this.yaw;
+    }
+  }
+}
+

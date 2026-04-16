@@ -229,6 +229,31 @@ export function buildZeppelin() {
   return group;
 }
 
+// Ground artillery emplacement: sandbag ring + cannon tube.
+export function buildArtillery() {
+  const group = new THREE.Group();
+  const sand = new THREE.MeshLambertMaterial({ color: 0x8a7a5a });
+  const metal = new THREE.MeshLambertMaterial({ color: 0x3a3a3a });
+  // Sandbag ring (low cylinder)
+  const ring = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.5, 1.0, 10), sand);
+  ring.position.y = 0.5;
+  group.add(ring);
+  // Inner floor (darker)
+  const floor = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 0.2, 10), new THREE.MeshLambertMaterial({ color: 0x4a3a22 }));
+  floor.position.y = 0.7;
+  group.add(floor);
+  // Cannon tube (tilted upward)
+  const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 3.5, 8), metal);
+  tube.rotation.x = -Math.PI / 5; // tilted ~36° up
+  tube.position.set(0, 1.6, -0.8);
+  group.add(tube);
+  // Base/mount
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.4, 0.8), metal);
+  base.position.set(0, 1.0, 0);
+  group.add(base);
+  return group;
+}
+
 // Simple scorch-mark pool: flat dark discs laid on the terrain where planes crash.
 export function createScorchPool(scene, size = 30) {
   const geo = new THREE.CircleGeometry(8, 20);

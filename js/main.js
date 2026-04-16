@@ -10,7 +10,8 @@ import { Spawner } from './enemy-spawner.js';
 import { Enemy } from './enemy.js';
 import { Guns, EnemyTracers } from './weapons.js';
 import { ENEMY, WORLD } from './config.js';
-import { Balloon, Zeppelin } from './targets.js';
+import { Balloon, Zeppelin, Artillery } from './targets.js';
+import { Weather } from './weather.js';
 import { GameState, STATE } from './game.js';
 import { initAudio, startWind, stopWind, playFlyby, playExplosion, playDeathWhine, playGunBurst, playHit, playKill } from './audio.js';
 
@@ -36,6 +37,7 @@ planeMesh.visible = false; // hidden from cockpit — we're inside it
 planeMesh.rotation.order = 'YXZ';
 scene.add(planeMesh);
 
+const weather = new Weather(scene);
 const enemies = [];
 const spawner = new Spawner(scene);
 const guns = new Guns(scene);
@@ -107,6 +109,19 @@ function resetGameObjects() {
   });
   enemies.push(zep);
   scene.add(zep.mesh);
+
+  // Ground artillery emplacements (4-6 scattered in the play area).
+  const artCount = 4 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < artCount; i++) {
+    const aa = Math.random() * Math.PI * 2;
+    const ar = 250 + Math.random() * 900;
+    const art = new Artillery({ x: Math.sin(aa) * ar, z: Math.cos(aa) * ar });
+    enemies.push(art);
+    scene.add(art.mesh);
+  }
+
+  // Weather variation for this run.
+  weather.randomize();
 }
 
 // Apply plane orientation to camera
@@ -183,6 +198,8 @@ function loop(t) {
       plane.updateDying(dt);
     } else {
       plane.update(dt, joystick.value());
+      // Wind gusts nudge the plane's yaw slightly.
+      plane.yaw += weather.update(dt);
     }
     syncCameraToPlane();
     for (const e of enemies) e.update(dt, plane);
@@ -191,12 +208,11 @@ function loop(t) {
     const spread = ENEMY.TRACER_SPREAD_DEG * Math.PI / 180;
     for (const e of enemies) {
       if (!e.justFired) continue;
-      // Origin: just in front of enemy's nose
-      const ox = e.position.x + e.forward.x * 2;
-      const oy = e.position.y + e.forward.y * 2;
-      const oz = e.position.z + e.forward.z * 2;
-      // Hit rounds aim closer to the player; misses get extra spread.
-      const extraSpread = e.lastShotHit ? spread * 0.5 : spread * 2.5;
+      // Origin: just ahead of the firer (plane nose or artillery tube).
+      const ox = e.position.x + (e.forward ? e.forward.x : 0) * 2;
+      const oy = e.position.y + (e.forward ? e.forward.y : 0) * 2 + (e.type === 'artillery' ? 2 : 0);
+      const oz = e.position.z + (e.forward ? e.forward.z : 0) * 2;
+      const extraSpread = e.lastShotHit ? spread * 0.5 : spread * (e.type === 'artillery' ? 4 : 2.5);
       enemyTracers.spawn({ x: ox, y: oy, z: oz }, plane.position, extraSpread);
     }
     spawner.removeDead(enemies);

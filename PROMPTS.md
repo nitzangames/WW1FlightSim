@@ -279,3 +279,9 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > yes keep going
 
 (→ gameplay batch: score breakdown screen with rank titles, wave announcements, ammo/reload mechanic)
+
+## 52. Content batch
+
+> yes lets do it
+
+(→ enemy evasive dodge, ground artillery targets, weather system with fog/wind variation)
