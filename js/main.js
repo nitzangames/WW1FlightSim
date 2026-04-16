@@ -305,14 +305,23 @@ function loop(t) {
             plane.position.z + (Math.random() - 0.5) * 3,
             0.55);
         }
-      } else if (plane.hp < 30 && plane.alive) {
+      } else if (plane.alive) {
+        // Engine exhaust contrail — faint wisp behind the player at all times.
         emitSmoke(smokePool,
-          plane.position.x - plane.forward.x * 2,
-          plane.position.y - plane.forward.y * 2,
-          plane.position.z - plane.forward.z * 2,
-          1.2);
-        if (plane.hp < 15) {
-          emitFire(firePool, plane.position.x, plane.position.y, plane.position.z, 0.4);
+          plane.position.x - plane.forward.x * 3,
+          plane.position.y - plane.forward.y * 3,
+          plane.position.z - plane.forward.z * 3,
+          0.35);
+        // Heavier smoke + fire when damaged.
+        if (plane.hp < 30) {
+          emitSmoke(smokePool,
+            plane.position.x - plane.forward.x * 2,
+            plane.position.y - plane.forward.y * 2,
+            plane.position.z - plane.forward.z * 2,
+            1.2);
+          if (plane.hp < 15) {
+            emitFire(firePool, plane.position.x, plane.position.y, plane.position.z, 0.4);
+          }
         }
       }
     }
@@ -373,7 +382,21 @@ function loop(t) {
     gs.gameOverTimer = Math.max(0, gs.gameOverTimer - dt);
   }
 
+  // Screen shake — offset camera briefly when taking damage.
+  let shakeX = 0, shakeY = 0, shakeZ = 0;
+  if (plane.damageFlash > 0.08) {
+    const amp = plane.damageFlash * 1.8;
+    shakeX = (Math.random() - 0.5) * amp;
+    shakeY = (Math.random() - 0.5) * amp;
+    shakeZ = (Math.random() - 0.5) * amp * 0.3;
+    camera.position.x += shakeX;
+    camera.position.y += shakeY;
+    camera.position.z += shakeZ;
+  }
   renderer.render(scene, camera);
+  camera.position.x -= shakeX;
+  camera.position.y -= shakeY;
+  camera.position.z -= shakeZ;
   drawHud(octx, {
     locked: !!(gunState && gunState.target),
     damageFlash: plane.damageFlash,

@@ -267,3 +267,9 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > engine sound should only appear when a plane flies past. We don't want continous noise. Also I want enemy planes to try to avoid me. Right now they fly right through. Polish - lets add all those. Gameplay, everything except altitude floor. Content, I like it all. I think we shoudl work on the current clouds too, they look like white dots right now.
 
 (→ batch 1: replace continuous engine drone with flyby whooshes + quiet wind ambient; add enemy break-off behavior at close range so they don't ram; replace single-sprite clouds with multi-puff clusters for volume; then continue through the remaining polish/gameplay/content list)
+
+## 50. SPD gauge → HP + polish batch
+
+> looks great. The SPD never seems to change. Maybe we should put the HP there instead. Lets move on to polish
+
+(→ replace SPD gauge with HP; add screen shake on damage; spinning propeller blades on planes; exhaust contrail behind player)

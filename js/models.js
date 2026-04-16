@@ -41,15 +41,26 @@ export function buildFokker() {
   hub.position.set(0, 0, 2.0);
   group.add(hub);
 
-  // Spinning-propeller disc — semi-transparent faint gray, flat perpendicular to nose.
+  // Spinning-propeller: transparent blur disc + two wooden blades that rotate.
   const propDiscGeo = new THREE.CylinderGeometry(0.85, 0.85, 0.04, 20);
   const propDiscMat = new THREE.MeshBasicMaterial({
-    color: 0xdcdcdc, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false,
+    color: 0xdcdcdc, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false,
   });
   const propDisc = new THREE.Mesh(propDiscGeo, propDiscMat);
   propDisc.rotation.x = Math.PI / 2;
   propDisc.position.set(0, 0, 2.12);
   group.add(propDisc);
+  // Blades (rotate via userData.propBlades in syncMesh)
+  const propBlades = new THREE.Group();
+  const bladeGeo = new THREE.BoxGeometry(0.1, 0.75, 0.03);
+  const bladeMat = new THREE.MeshLambertMaterial({ color: 0x5a3a1a });
+  const bl1 = new THREE.Mesh(bladeGeo, bladeMat);
+  const bl2 = new THREE.Mesh(bladeGeo, bladeMat);
+  bl2.rotation.z = Math.PI / 2;
+  propBlades.add(bl1, bl2);
+  propBlades.position.set(0, 0, 2.12);
+  group.add(propBlades);
+  group.userData.propBlades = propBlades;
 
   // Landing gear: twin wheels on horizontal axle, V-struts to the fuselage.
   const wheelMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
@@ -361,15 +372,25 @@ export function buildBiplane({ variant = 'a' } = {}) {
   const tailH = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.09, 0.6), body);
   tailH.position.set(0, 0.05, -2.2); group.add(tailH);
 
-  // Spinning-propeller disc at the nose.
+  // Spinning-propeller: blur disc + wooden blades.
   const propDiscGeo = new THREE.CylinderGeometry(0.75, 0.75, 0.04, 20);
   const propDiscMat = new THREE.MeshBasicMaterial({
-    color: 0xdcdcdc, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false,
+    color: 0xdcdcdc, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false,
   });
   const propDisc = new THREE.Mesh(propDiscGeo, propDiscMat);
   propDisc.rotation.x = Math.PI / 2;
   propDisc.position.set(0, 0, 2.22);
   group.add(propDisc);
+  const propBlades = new THREE.Group();
+  const bladeGeo2 = new THREE.BoxGeometry(0.09, 0.7, 0.03);
+  const bladeMat2 = new THREE.MeshLambertMaterial({ color: 0x5a3a1a });
+  const bpb1 = new THREE.Mesh(bladeGeo2, bladeMat2);
+  const bpb2 = new THREE.Mesh(bladeGeo2, bladeMat2);
+  bpb2.rotation.z = Math.PI / 2;
+  propBlades.add(bpb1, bpb2);
+  propBlades.position.set(0, 0, 2.22);
+  group.add(propBlades);
+  group.userData.propBlades = propBlades;
 
   // Landing gear: twin wheels, horizontal axle, struts up to fuselage.
   const wheelGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.12, 14);

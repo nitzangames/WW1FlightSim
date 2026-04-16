@@ -178,10 +178,11 @@ function drawCockpit(ctx, state) {
 
   // 3 gauges — ASI (left, small), ALT (center, big), RPM (right, small)
   const gaugeY = dashY + dashH * 0.45;
-  const asi = Math.max(0, Math.min(200, (state.speed || 0) * 1.5));
+  const hpGauge = Math.max(0, Math.min(200, ((state.hp || 0) / PLAYER.HP) * 200));
   const alt = Math.max(0, Math.min(200, (state.altitude || 0) * 0.5));
   const rpm = 120 + (state.rpmJitter || 0) * 20;
-  drawGauge(ctx, W * 0.18, gaugeY, 90, 'SPD', asi);
+  const hpColor = hpGauge > 100 ? '#ffe580' : hpGauge > 40 ? '#ff9944' : '#ff3333';
+  drawGauge(ctx, W * 0.18, gaugeY, 90, 'HP', hpGauge, 200, hpColor);
   drawGauge(ctx, W * 0.5,  gaugeY, 115, 'ALT', alt);
   drawGauge(ctx, W * 0.82, gaugeY, 90, 'RPM', rpm);
 
