@@ -69,37 +69,36 @@ function screenToCanvas(clientX, clientY) {
     y: (clientY - rect.top) * (CANVAS_H / rect.height),
   };
 }
-let menuTapCount = 0;
-let menuTapTimer = 0;
 overlayCanvas.addEventListener('pointerdown', (e) => {
   initAudio();
+  const p = screenToCanvas(e.clientX, e.clientY);
+
   if (gs.state === STATE.MENU) {
-    menuTapCount++;
-    clearTimeout(menuTapTimer);
-    if (menuTapCount >= 2 && mpAvailable()) {
-      // Double-tap → co-op multiplayer lobby.
-      menuTapCount = 0;
+    // Check if tap hit a menu button (regions stored on drawHud by the last render).
+    const inBtn = (btn) => btn && p.x >= btn.x && p.x <= btn.x + btn.w && p.y >= btn.y && p.y <= btn.y + btn.h;
+
+    if (inBtn(drawHud._mpBtn) && mpAvailable()) {
       mpOpenLobby({
         onStart: (isHost) => mpStartGame(isHost),
         onCancel: () => { /* stay on menu */ },
       });
-    } else {
-      // Single tap → solo game (after a short delay to check for double-tap).
-      menuTapTimer = setTimeout(() => {
-        if (gs.state === STATE.MENU) {
-          menuTapCount = 0;
-          mpMode = false;
-          resetGameObjects();
-          gs.startRun();
-        }
-      }, mpAvailable() ? 300 : 0);
+      return;
     }
-  } else if (gs.state === STATE.GAMEOVER && gs.gameOverTimer <= 0) {
+    // Solo button or any tap outside buttons → solo game.
+    mpMode = false;
+    resetGameObjects();
+    gs.startRun();
+    joystick.down(p.x, p.y);
+    return;
+  }
+
+  if (gs.state === STATE.GAMEOVER && gs.gameOverTimer <= 0) {
     gs.state = STATE.MENU;
     if (mpMode) mpLeave();
     mpMode = false;
+    return;
   }
-  const p = screenToCanvas(e.clientX, e.clientY);
+
   joystick.down(p.x, p.y);
 });
 overlayCanvas.addEventListener('pointermove', (e) => {

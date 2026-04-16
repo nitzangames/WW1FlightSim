@@ -161,7 +161,8 @@ function drawWaypoint(ctx, wp) {
 
 function drawCockpit(ctx, state) {
   const W = CANVAS_W, H = CANVAS_H;
-  const dashH = H * 0.32;
+  // Shorter dashboard — 24% instead of 32% so more sky is visible.
+  const dashH = H * 0.24;
   const dashY = H - dashH;
 
   // Wooden panel
@@ -169,39 +170,28 @@ function drawCockpit(ctx, state) {
 
   // Leather top trim
   ctx.fillStyle = '#2e1d10';
-  ctx.fillRect(0, dashY, W, 28);
+  ctx.fillRect(0, dashY, W, 22);
   ctx.strokeStyle = '#d7b470';
   ctx.setLineDash([10, 10]);
-  ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.moveTo(0, dashY + 14); ctx.lineTo(W, dashY + 14); ctx.stroke();
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(0, dashY + 11); ctx.lineTo(W, dashY + 11); ctx.stroke();
   ctx.setLineDash([]);
 
-  // 3 gauges — ASI (left, small), ALT (center, big), RPM (right, small)
-  const gaugeY = dashY + dashH * 0.45;
+  // 3 gauges — HP (left), ALT (center, bigger), RPM (right)
+  // Gauges scaled down slightly to fit the shorter panel.
+  const gaugeY = dashY + dashH * 0.52;
   const hpGauge = Math.max(0, Math.min(200, ((state.hp || 0) / PLAYER.HP) * 200));
   const alt = Math.max(0, Math.min(200, (state.altitude || 0) * 0.5));
   const rpm = 120 + (state.rpmJitter || 0) * 20;
   const hpColor = hpGauge > 100 ? '#ffe580' : hpGauge > 40 ? '#ff9944' : '#ff3333';
-  drawGauge(ctx, W * 0.18, gaugeY, 90, 'HP', hpGauge, 200, hpColor);
-  drawGauge(ctx, W * 0.5,  gaugeY, 115, 'ALT', alt);
-  drawGauge(ctx, W * 0.82, gaugeY, 90, 'RPM', rpm);
-
-  // HP bar inset
-  const hpW = W * 0.7, hpH = 24, hpX = (W - hpW) / 2, hpY = dashY + dashH * 0.84;
-  const pct = Math.max(0, (state.hp || 0) / PLAYER.HP);
-  ctx.fillStyle = '#000000cc';
-  ctx.fillRect(hpX - 3, hpY - 3, hpW + 6, hpH + 6);
-  ctx.fillStyle = '#c21515';
-  ctx.fillRect(hpX, hpY, hpW * pct, hpH);
-  ctx.fillStyle = '#ffffffdd';
-  ctx.font = 'bold 22px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(`${Math.max(0, Math.round(state.hp || 0))} / ${PLAYER.HP} HP`, W / 2, hpY + hpH + 22);
+  drawGauge(ctx, W * 0.18, gaugeY, 72, 'HP', hpGauge, 200, hpColor);
+  drawGauge(ctx, W * 0.5,  gaugeY, 92, 'ALT', alt);
+  drawGauge(ctx, W * 0.82, gaugeY, 72, 'RPM', rpm);
 
   // Twin gun breeches (end-on) sitting just above the dashboard
   const flash = state.gunFlash || 0;
-  gunBreech(ctx, W / 2 - 110, dashY - 14, 42, flash);
-  gunBreech(ctx, W / 2 + 110, dashY - 14, 42, flash);
+  gunBreech(ctx, W / 2 - 100, dashY - 12, 36, flash);
+  gunBreech(ctx, W / 2 + 100, dashY - 12, 36, flash);
 }
 
 // ---------- main HUD ----------
@@ -349,30 +339,48 @@ export function drawHud(ctx, state) {
     ctx.fillText('TAP TO FLY AGAIN', mx, y);
   }
 
-  // Menu
+  // Menu — title + buttons
   if (state.menu) {
     ctx.fillStyle = '#000000dd';
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    const mx = CANVAS_W / 2;
+
     ctx.fillStyle = '#ffd65a';
     ctx.textAlign = 'center';
     ctx.font = 'bold 110px serif';
-    ctx.fillText('WW1', CANVAS_W / 2, CANVAS_H / 2 - 180);
+    ctx.fillText('WW1', mx, CANVAS_H * 0.28);
     ctx.font = 'bold 88px serif';
     ctx.fillStyle = '#ffeded';
-    ctx.fillText('FLIGHT SIM', CANVAS_W / 2, CANVAS_H / 2 - 80);
-    ctx.font = '36px sans-serif';
-    ctx.fillStyle = '#ffffffcc';
-    ctx.fillText('TAP TO FLY', CANVAS_W / 2, CANVAS_H / 2 + 60);
-    ctx.font = '28px sans-serif';
-    ctx.fillStyle = '#ffffff99';
-    ctx.fillText(`BEST ${state.best}`, CANVAS_W / 2, CANVAS_H / 2 + 140);
+    ctx.fillText('FLIGHT SIM', mx, CANVAS_H * 0.28 + 100);
 
-    // Multiplayer button hint (if available)
-    if (state.mpAvailable) {
-      ctx.fillStyle = '#ffd65acc';
-      ctx.font = 'bold 32px sans-serif';
-      ctx.fillText('TAP TWICE FOR CO-OP', CANVAS_W / 2, CANVAS_H / 2 + 220);
-    }
+    // Solo play button
+    const btnW = 480, btnH = 90;
+    const soloY = CANVAS_H * 0.55;
+    ctx.fillStyle = '#b01a1a';
+    ctx.beginPath();
+    ctx.roundRect(mx - btnW / 2, soloY, btnW, btnH, 16);
+    ctx.fill();
+    ctx.fillStyle = '#ffffffee';
+    ctx.font = 'bold 42px sans-serif';
+    ctx.fillText('SOLO FLIGHT', mx, soloY + 58);
+    // Store for hit-testing in main.js
+    drawHud._soloBtn = { x: mx - btnW / 2, y: soloY, w: btnW, h: btnH };
+
+    // Multiplayer button (shown even when PlaySDK isn't available locally —
+    // only works on the platform but should always be visible).
+    const mpY = soloY + btnH + 30;
+    ctx.fillStyle = state.mpAvailable ? '#1a4ab0' : '#3a3a4a';
+    ctx.beginPath();
+    ctx.roundRect(mx - btnW / 2, mpY, btnW, btnH, 16);
+    ctx.fill();
+    ctx.fillStyle = state.mpAvailable ? '#ffffffee' : '#ffffff66';
+    ctx.font = 'bold 42px sans-serif';
+    ctx.fillText('MULTIPLAYER', mx, mpY + 58);
+    drawHud._mpBtn = { x: mx - btnW / 2, y: mpY, w: btnW, h: btnH };
+
+    ctx.font = '28px sans-serif';
+    ctx.fillStyle = '#ffffff88';
+    ctx.fillText(`BEST ${state.best}`, mx, mpY + btnH + 50);
   }
 
   // Version
