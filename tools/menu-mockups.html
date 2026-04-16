@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Menu mockups — WW1 Flight Sim</title>
+<style>
+  body { margin: 0; background: #1a1a1a; font-family: -apple-system, sans-serif; color: #ddd; padding: 20px; }
+  h1 { margin: 0 0 6px; }
+  p.hint { opacity: 0.5; font-size: 13px; margin: 0 0 16px; }
+  .row { display: flex; gap: 20px; flex-wrap: wrap; }
+  .panel { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  canvas { border-radius: 8px; box-shadow: 0 4px 24px rgba(0,0,0,0.6); }
+  .label { font-size: 16px; font-weight: bold; }
+  .sub { font-size: 12px; opacity: 0.6; max-width: 360px; text-align: center; }
+</style>
+</head>
+<body>
+<h1>Menu mockups</h1>
+<p class="hint">Portrait 1080×1920. Pick one style.</p>
+<div class="row">
+  <div class="panel">
+    <canvas id="m1" width="360" height="640"></canvas>
+    <div class="label">A — Vintage poster</div>
+    <div class="sub">Aged parchment background, military insignia, old-fashioned serif type, brass accents.</div>
+  </div>
+  <div class="panel">
+    <canvas id="m2" width="360" height="640"></canvas>
+    <div class="label">B — Dramatic sky</div>
+    <div class="sub">Sky gradient visible behind frosted-glass overlay, plane silhouettes, golden title glow.</div>
+  </div>
+  <div class="panel">
+    <canvas id="m3" width="360" height="640"></canvas>
+    <div class="label">C — Military briefing</div>
+    <div class="sub">Dark olive/green theme, stencil text, red stamps, compass rose, map paper feel.</div>
+  </div>
+  <div class="panel">
+    <canvas id="m4" width="360" height="640"></canvas>
+    <div class="label">D — Cinematic dark</div>
+    <div class="sub">Pure dark with dramatic lighting, large bold type, subtle red/gold accents, modern feel.</div>
+  </div>
+</div>
+
+<script>
+const W = 360, H = 640;
+
+function btn(g, x, y, w, h, color, text, textColor = '#fff') {
+  g.fillStyle = color;
+  g.beginPath();
+  g.roundRect(x, y, w, h, 8);
+  g.fill();
+  g.fillStyle = textColor;
+  g.font = 'bold 20px sans-serif';
+  g.textAlign = 'center';
+  g.fillText(text, x + w / 2, y + h / 2 + 7);
+}
+
+function triplaneSil(g, x, y, s, color) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.fillStyle = color;
+  g.fillRect(-25, -3, 50, 6);
+  g.fillRect(-15, -18, 28, 4);
+  g.fillRect(-15, -6, 28, 4);
+  g.fillRect(-15, 6, 28, 4);
+  g.fillRect(-25, -10, 3, 14);
+  g.restore();
+}
+
+// ---- A: Vintage poster ----
+(function() {
+  const g = document.getElementById('m1').getContext('2d');
+  // Parchment gradient
+  const bg = g.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#d4c4a0');
+  bg.addColorStop(0.5, '#c8b68a');
+  bg.addColorStop(1, '#a8946a');
+  g.fillStyle = bg;
+  g.fillRect(0, 0, W, H);
+  // Aged paper noise
+  g.globalAlpha = 0.08;
+  for (let i = 0; i < 600; i++) {
+    g.fillStyle = Math.random() > 0.5 ? '#4a3a1a' : '#f0e8d0';
+    g.fillRect(Math.random() * W, Math.random() * H, 2, 2);
+  }
+  g.globalAlpha = 1;
+  // Decorative border
+  g.strokeStyle = '#5a3a1a';
+  g.lineWidth = 3;
+  g.strokeRect(16, 16, W - 32, H - 32);
+  g.strokeRect(20, 20, W - 40, H - 40);
+  // Iron cross emblem (top)
+  g.fillStyle = '#2a1a0a';
+  g.fillRect(W/2 - 20, 50, 40, 10);
+  g.fillRect(W/2 - 5, 35, 10, 40);
+  // Title
+  g.fillStyle = '#2a1a0a';
+  g.textAlign = 'center';
+  g.font = 'bold 68px serif';
+  g.fillText('WW1', W / 2, 140);
+  g.font = 'bold 40px serif';
+  g.fillText('FLIGHT SIM', W / 2, 190);
+  // Subtitle
+  g.font = 'italic 14px serif';
+  g.fillStyle = '#5a4a2a';
+  g.fillText('The Great War in the Skies', W / 2, 218);
+  // Plane illustration
+  triplaneSil(g, W / 2, 280, 2.5, '#5a2a1a');
+  // Buttons (brass style)
+  g.fillStyle = '#8a6a30';
+  g.beginPath(); g.roundRect(W/2 - 100, 340, 200, 48, 6); g.fill();
+  g.fillStyle = '#5a4020';
+  g.beginPath(); g.roundRect(W/2 - 100, 342, 200, 44, 6); g.fill();
+  g.fillStyle = '#f0e0b0';
+  g.font = 'bold 20px serif';
+  g.fillText('SOLO FLIGHT', W / 2, 370);
+
+  g.fillStyle = '#8a6a30';
+  g.beginPath(); g.roundRect(W/2 - 100, 400, 200, 48, 6); g.fill();
+  g.fillStyle = '#5a4020';
+  g.beginPath(); g.roundRect(W/2 - 100, 402, 200, 44, 6); g.fill();
+  g.fillStyle = '#f0e0b0';
+  g.fillText('MULTIPLAYER', W / 2, 430);
+
+  g.fillStyle = '#5a4a2a';
+  g.font = '14px serif';
+  g.fillText('BEST: 0', W / 2, 480);
+  // Version
+  g.fillStyle = '#8a7a5a';
+  g.font = '10px sans-serif';
+  g.fillText('v0.9.0', W / 2, H - 24);
+})();
+
+// ---- B: Dramatic sky ----
+(function() {
+  const g = document.getElementById('m2').getContext('2d');
+  // Sky gradient
+  const sky = g.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, '#2a4a7a');
+  sky.addColorStop(0.5, '#5a8ac0');
+  sky.addColorStop(0.8, '#dab870');
+  sky.addColorStop(1, '#c07840');
+  g.fillStyle = sky;
+  g.fillRect(0, 0, W, H);
+  // Frosted glass panel
+  g.fillStyle = 'rgba(0,0,0,0.45)';
+  g.beginPath();
+  g.roundRect(24, 60, W - 48, H - 120, 16);
+  g.fill();
+  // Subtle border on glass
+  g.strokeStyle = 'rgba(255,255,255,0.15)';
+  g.lineWidth = 1.5;
+  g.beginPath();
+  g.roundRect(24, 60, W - 48, H - 120, 16);
+  g.stroke();
+  // Plane silhouettes in the sky
+  triplaneSil(g, 80, 100, 1.8, 'rgba(0,0,0,0.3)');
+  triplaneSil(g, 280, 130, 1.2, 'rgba(0,0,0,0.2)');
+  triplaneSil(g, 200, 170, 0.8, 'rgba(0,0,0,0.15)');
+  // Title with glow
+  g.shadowColor = '#ffa030';
+  g.shadowBlur = 20;
+  g.fillStyle = '#ffd65a';
+  g.textAlign = 'center';
+  g.font = 'bold 72px serif';
+  g.fillText('WW1', W / 2, 260);
+  g.shadowBlur = 10;
+  g.fillStyle = '#ffeecc';
+  g.font = 'bold 44px serif';
+  g.fillText('FLIGHT SIM', W / 2, 315);
+  g.shadowBlur = 0;
+  // Buttons
+  g.fillStyle = '#b01a1a';
+  g.beginPath(); g.roundRect(W/2 - 110, 380, 220, 50, 10); g.fill();
+  g.fillStyle = '#fff';
+  g.font = 'bold 22px sans-serif';
+  g.fillText('SOLO FLIGHT', W / 2, 412);
+
+  g.fillStyle = '#1a4ab0';
+  g.beginPath(); g.roundRect(W/2 - 110, 445, 220, 50, 10); g.fill();
+  g.fillStyle = '#fff';
+  g.fillText('MULTIPLAYER', W / 2, 477);
+
+  g.fillStyle = '#ffffff88';
+  g.font = '16px sans-serif';
+  g.fillText('BEST: 0', W / 2, 530);
+  g.font = '10px sans-serif';
+  g.fillText('v0.9.0', W / 2, H - 44);
+})();
+
+// ---- C: Military briefing ----
+(function() {
+  const g = document.getElementById('m3').getContext('2d');
+  // Olive/dark green base
+  g.fillStyle = '#1a2a1a';
+  g.fillRect(0, 0, W, H);
+  // Paper texture overlay
+  g.globalAlpha = 0.06;
+  for (let i = 0; i < 800; i++) {
+    g.fillStyle = Math.random() > 0.5 ? '#4a5a3a' : '#0a1a0a';
+    g.fillRect(Math.random() * W, Math.random() * H, 3, 1);
+  }
+  g.globalAlpha = 1;
+  // Grid lines (map-style)
+  g.strokeStyle = 'rgba(100,130,80,0.15)';
+  g.lineWidth = 0.5;
+  for (let x = 0; x < W; x += 30) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  for (let y = 0; y < H; y += 30) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  // Compass rose
+  g.strokeStyle = 'rgba(160,180,120,0.25)';
+  g.lineWidth = 1;
+  g.beginPath(); g.arc(W / 2, 100, 45, 0, Math.PI * 2); g.stroke();
+  g.beginPath(); g.arc(W / 2, 100, 35, 0, Math.PI * 2); g.stroke();
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    g.beginPath(); g.moveTo(W/2 + Math.cos(a)*30, 100 + Math.sin(a)*30);
+    g.lineTo(W/2 + Math.cos(a)*48, 100 + Math.sin(a)*48); g.stroke();
+  }
+  g.fillStyle = 'rgba(160,180,120,0.4)';
+  g.font = '10px sans-serif'; g.textAlign = 'center';
+  g.fillText('N', W/2, 47);
+  // Title — stencil style
+  g.fillStyle = '#c8d8a0';
+  g.textAlign = 'center';
+  g.font = 'bold 60px sans-serif';
+  g.fillText('WW1', W / 2, 210);
+  g.font = 'bold 36px sans-serif';
+  g.fillText('FLIGHT SIM', W / 2, 255);
+  // Red "CLASSIFIED" stamp
+  g.save();
+  g.translate(W / 2 + 60, 230);
+  g.rotate(-0.2);
+  g.strokeStyle = '#cc2020';
+  g.lineWidth = 2;
+  g.strokeRect(-45, -12, 90, 24);
+  g.fillStyle = '#cc2020';
+  g.font = 'bold 14px sans-serif';
+  g.textAlign = 'center';
+  g.fillText('CLASSIFIED', 0, 5);
+  g.restore();
+  // Mission briefing text
+  g.fillStyle = '#8a9a6a';
+  g.font = '12px sans-serif';
+  g.textAlign = 'center';
+  g.fillText('MISSION: AIR SUPERIORITY', W / 2, 295);
+  g.fillText('SECTOR: WESTERN FRONT', W / 2, 312);
+  // Buttons (military green)
+  g.fillStyle = '#4a6a2a';
+  g.beginPath(); g.roundRect(W/2 - 105, 350, 210, 48, 4); g.fill();
+  g.strokeStyle = '#8aaa5a';
+  g.lineWidth = 1.5;
+  g.beginPath(); g.roundRect(W/2 - 105, 350, 210, 48, 4); g.stroke();
+  g.fillStyle = '#e0f0c0';
+  g.font = 'bold 20px sans-serif';
+  g.fillText('SOLO FLIGHT', W / 2, 380);
+
+  g.fillStyle = '#3a5a22';
+  g.beginPath(); g.roundRect(W/2 - 105, 412, 210, 48, 4); g.fill();
+  g.strokeStyle = '#8aaa5a';
+  g.beginPath(); g.roundRect(W/2 - 105, 412, 210, 48, 4); g.stroke();
+  g.fillStyle = '#e0f0c0';
+  g.fillText('MULTIPLAYER', W / 2, 442);
+
+  g.fillStyle = '#6a8a4a';
+  g.font = '14px sans-serif';
+  g.fillText('BEST: 0', W / 2, 492);
+  g.font = '10px sans-serif';
+  g.fillText('v0.9.0', W / 2, H - 24);
+})();
+
+// ---- D: Cinematic dark ----
+(function() {
+  const g = document.getElementById('m4').getContext('2d');
+  // Dark gradient
+  const bg = g.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#0a0a0a');
+  bg.addColorStop(0.4, '#1a1014');
+  bg.addColorStop(1, '#0a0a0a');
+  g.fillStyle = bg;
+  g.fillRect(0, 0, W, H);
+  // Subtle red stripe across
+  g.fillStyle = 'rgba(180,20,20,0.12)';
+  g.fillRect(0, H * 0.35, W, 3);
+  g.fillRect(0, H * 0.65, W, 3);
+  // Geometric wing accents
+  g.strokeStyle = 'rgba(180,20,20,0.25)';
+  g.lineWidth = 1;
+  g.beginPath(); g.moveTo(0, 200); g.lineTo(W, 200); g.stroke();
+  g.beginPath(); g.moveTo(40, 195); g.lineTo(W - 40, 195); g.stroke();
+  // Title — very large, minimal
+  g.fillStyle = '#ffffff';
+  g.textAlign = 'center';
+  g.font = 'bold 90px serif';
+  g.fillText('WW1', W / 2, 160);
+  // Subtitle with red accent
+  g.fillStyle = '#cc2020';
+  g.font = 'bold 16px sans-serif';
+  g.letterSpacing = '8px';
+  g.fillText('F L I G H T   S I M', W / 2, 215);
+  // Plane silhouette
+  g.globalAlpha = 0.12;
+  triplaneSil(g, W / 2, 300, 4.5, '#ffffff');
+  g.globalAlpha = 1;
+  // Buttons — clean, flat, wide
+  g.fillStyle = '#b01a1a';
+  g.beginPath(); g.roundRect(30, 380, W - 60, 52, 6); g.fill();
+  g.fillStyle = '#ffffff';
+  g.font = 'bold 22px sans-serif';
+  g.fillText('SOLO FLIGHT', W / 2, 412);
+
+  g.fillStyle = '#ffffff';
+  g.strokeStyle = '#ffffff44';
+  g.lineWidth = 1.5;
+  g.beginPath(); g.roundRect(30, 448, W - 60, 52, 6); g.stroke();
+  g.fillStyle = '#ffffffcc';
+  g.font = 'bold 22px sans-serif';
+  g.fillText('MULTIPLAYER', W / 2, 480);
+
+  g.fillStyle = '#ffffff44';
+  g.font = '15px sans-serif';
+  g.fillText('BEST: 0', W / 2, 538);
+  g.font = '10px sans-serif';
+  g.fillStyle = '#ffffff33';
+  g.fillText('v0.9.0', W / 2, H - 24);
+})();
+</script>
+</body>
+</html>

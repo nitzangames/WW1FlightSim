@@ -340,48 +340,81 @@ export function drawHud(ctx, state) {
     ctx.fillText('TAP TO FLY AGAIN', mx, y);
   }
 
-  // Menu — title + buttons
+  // Menu — vintage poster style with 3D Fokker visible through a parchment overlay.
   if (state.menu) {
-    ctx.fillStyle = '#000000dd';
-    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
     const mx = CANVAS_W / 2;
 
-    ctx.fillStyle = '#ffd65a';
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 110px serif';
-    ctx.fillText('WW1', mx, CANVAS_H * 0.28);
-    ctx.font = 'bold 88px serif';
-    ctx.fillStyle = '#ffeded';
-    ctx.fillText('FLIGHT SIM', mx, CANVAS_H * 0.28 + 100);
+    // Semi-transparent parchment overlay — lets the 3D scene bleed through.
+    const bg = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
+    bg.addColorStop(0, 'rgba(190,170,140,0.82)');
+    bg.addColorStop(0.45, 'rgba(180,158,120,0.60)');
+    bg.addColorStop(0.7, 'rgba(170,148,110,0.75)');
+    bg.addColorStop(1, 'rgba(150,128,90,0.88)');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-    // Solo play button
-    const btnW = 480, btnH = 90;
-    const soloY = CANVAS_H * 0.55;
-    ctx.fillStyle = '#b01a1a';
-    ctx.beginPath();
-    ctx.roundRect(mx - btnW / 2, soloY, btnW, btnH, 16);
-    ctx.fill();
-    ctx.fillStyle = '#ffffffee';
-    ctx.font = 'bold 42px sans-serif';
-    ctx.fillText('SOLO FLIGHT', mx, soloY + 58);
-    // Store for hit-testing in main.js
+    // Aged noise dots.
+    ctx.globalAlpha = 0.07;
+    for (let i = 0; i < 200; i++) {
+      ctx.fillStyle = Math.random() > 0.5 ? '#4a3a1a' : '#f0e8d0';
+      ctx.fillRect(Math.random() * CANVAS_W, Math.random() * CANVAS_H, 4, 4);
+    }
+    ctx.globalAlpha = 1;
+
+    // Decorative double border.
+    ctx.strokeStyle = '#5a3a1a88';
+    ctx.lineWidth = 5;
+    ctx.strokeRect(40, 40, CANVAS_W - 80, CANVAS_H - 80);
+    ctx.lineWidth = 2;
+    ctx.strokeRect(52, 52, CANVAS_W - 104, CANVAS_H - 104);
+
+    // Iron cross emblem at top.
+    ctx.fillStyle = '#2a1a0a';
+    ctx.fillRect(mx - 50, 100, 100, 22);
+    ctx.fillRect(mx - 11, 70, 22, 85);
+
+    // Title.
+    ctx.fillStyle = '#2a1a0a';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 140px serif';
+    ctx.fillText('WW1', mx, 280);
+    ctx.font = 'bold 90px serif';
+    ctx.fillText('FLIGHT SIM', mx, 390);
+
+    // Subtitle.
+    ctx.font = 'italic 28px serif';
+    ctx.fillStyle = '#5a4a2a';
+    ctx.fillText('The Great War in the Skies', mx, 440);
+
+    // Brass-styled buttons.
+    const btnW = 520, btnH = 100;
+    const soloY = CANVAS_H * 0.58;
+
+    // Solo button (brass fill).
+    ctx.fillStyle = '#8a6a30';
+    ctx.beginPath(); ctx.roundRect(mx - btnW / 2, soloY, btnW, btnH, 12); ctx.fill();
+    ctx.fillStyle = '#5a4020';
+    ctx.beginPath(); ctx.roundRect(mx - btnW / 2 + 3, soloY + 3, btnW - 6, btnH - 6, 10); ctx.fill();
+    ctx.fillStyle = '#f0e0b0';
+    ctx.font = 'bold 44px serif';
+    ctx.fillText('SOLO FLIGHT', mx, soloY + 64);
     drawHud._soloBtn = { x: mx - btnW / 2, y: soloY, w: btnW, h: btnH };
 
-    // Multiplayer button (shown even when PlaySDK isn't available locally —
-    // only works on the platform but should always be visible).
+    // Multiplayer button.
     const mpY = soloY + btnH + 30;
-    ctx.fillStyle = state.mpAvailable ? '#1a4ab0' : '#3a3a4a';
-    ctx.beginPath();
-    ctx.roundRect(mx - btnW / 2, mpY, btnW, btnH, 16);
-    ctx.fill();
-    ctx.fillStyle = state.mpAvailable ? '#ffffffee' : '#ffffff66';
-    ctx.font = 'bold 42px sans-serif';
-    ctx.fillText('MULTIPLAYER', mx, mpY + 58);
+    ctx.fillStyle = '#8a6a30';
+    ctx.beginPath(); ctx.roundRect(mx - btnW / 2, mpY, btnW, btnH, 12); ctx.fill();
+    ctx.fillStyle = state.mpAvailable ? '#3a4a6a' : '#4a3a22';
+    ctx.beginPath(); ctx.roundRect(mx - btnW / 2 + 3, mpY + 3, btnW - 6, btnH - 6, 10); ctx.fill();
+    ctx.fillStyle = '#f0e0b0';
+    ctx.font = 'bold 44px serif';
+    ctx.fillText('MULTIPLAYER', mx, mpY + 64);
     drawHud._mpBtn = { x: mx - btnW / 2, y: mpY, w: btnW, h: btnH };
 
-    ctx.font = '28px sans-serif';
-    ctx.fillStyle = '#ffffff88';
-    ctx.fillText(`BEST ${state.best}`, mx, mpY + btnH + 50);
+    // Best score.
+    ctx.fillStyle = '#5a4a2a';
+    ctx.font = '30px serif';
+    ctx.fillText(`BEST: ${state.best}`, mx, mpY + btnH + 60);
   }
 
   // Version

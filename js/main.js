@@ -44,6 +44,13 @@ const airfield = buildAirfield();
 airfield.position.y = WORLD.GROUND_Y;
 scene.add(airfield);
 
+// Menu display Fokker — slowly rotates in front of the camera during MENU state.
+const menuFokker = buildFokker();
+menuFokker.visible = false;
+menuFokker.rotation.order = 'YXZ';
+scene.add(menuFokker);
+let menuFokkerAngle = 0;
+
 const weather = new Weather(scene);
 const enemies = [];
 const spawner = new Spawner(scene);
@@ -583,6 +590,31 @@ function loop(t) {
 
   if (gs.state === STATE.GAMEOVER) {
     gs.gameOverTimer = Math.max(0, gs.gameOverTimer - dt);
+  }
+
+  // Menu state: show rotating Fokker, position camera for a nice 3/4 view.
+  if (gs.state === STATE.MENU) {
+    menuFokker.visible = true;
+    menuFokkerAngle += dt * 0.4;
+    const mfY = WORLD.GROUND_Y + 3;
+    menuFokker.position.set(0, mfY, 0);
+    menuFokker.rotation.y = menuFokkerAngle;
+    menuFokker.rotation.x = 0;
+    menuFokker.rotation.z = -0.1;
+    // Orbit camera around the Fokker.
+    camera.position.set(
+      Math.sin(menuFokkerAngle * 0.3) * 12,
+      mfY + 4,
+      Math.cos(menuFokkerAngle * 0.3) * 12
+    );
+    camera.rotation.order = 'YXZ';
+    camera.lookAt(0, mfY + 1, 0);
+    // Spin prop blades.
+    if (menuFokker.userData.propBlades) {
+      menuFokker.userData.propBlades.rotation.z += 0.5;
+    }
+  } else {
+    menuFokker.visible = false;
   }
 
   // Screen shake — offset camera briefly when taking damage.
