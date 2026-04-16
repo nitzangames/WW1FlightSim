@@ -315,3 +315,11 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 ## 59. MP menu button + remove HP bar + lower HUD
 
 > I think we should add a button the main menu for multiplayer. Also, now that we have a dial for hp, we can remove the bar and lower the hud down so more of the screen is visible.
+
+## 60. Smooth enemy turning
+
+> the enemies don't fly smoothly, they especially don't turn smoothly
+
+## 61. Deploy
+
+> lets deploy it!
