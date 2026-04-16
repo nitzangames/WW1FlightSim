@@ -21,7 +21,7 @@ export function worldToRadar(player, enemy, radius, range) {
   return { x, y };
 }
 
-export function drawMinimap(ctx, player, enemies, { cx, cy, radius, allies }) {
+export function drawMinimap(ctx, player, enemies, { cx, cy, radius, allies, pickups }) {
   ctx.save();
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -69,6 +69,19 @@ export function drawMinimap(ctx, player, enemies, { cx, cy, radius, allies }) {
       ctx.closePath();
       ctx.fill();
       ctx.restore();
+    }
+  }
+
+  // Health pickups — green crosses on the radar.
+  if (pickups) {
+    for (const pk of pickups) {
+      const pp = worldToRadar(player, pk, radius, 2000);
+      ctx.strokeStyle = '#40ee50';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx + pp.x - 5, cy + pp.y); ctx.lineTo(cx + pp.x + 5, cy + pp.y);
+      ctx.moveTo(cx + pp.x, cy + pp.y - 5); ctx.lineTo(cx + pp.x, cy + pp.y + 5);
+      ctx.stroke();
     }
   }
 

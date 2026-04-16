@@ -39,9 +39,9 @@ planeMesh.visible = false; // hidden from cockpit — we're inside it
 planeMesh.rotation.order = 'YXZ';
 scene.add(planeMesh);
 
-// Airfield at origin — sits on the flattened terrain zone.
+// Airfield — off to one side of the map, not the center.
 const airfield = buildAirfield();
-airfield.position.y = WORLD.GROUND_Y;
+airfield.position.set(WORLD.AIRFIELD_X, WORLD.GROUND_Y, WORLD.AIRFIELD_Z);
 scene.add(airfield);
 
 // Menu display Fokker — slowly rotates in front of the camera during MENU state.
@@ -165,8 +165,9 @@ function resetGameObjects() {
   for (const e of enemies) scene.remove(e.mesh);
   enemies.length = 0;
   // Start on the runway: near the end of the strip, facing down the runway (-Z).
-  const runwayY = WORLD.GROUND_Y + terrainHeight(0, 90) + 1.5;
-  plane.position.x = 0; plane.position.y = runwayY; plane.position.z = 90;
+  const rsx = WORLD.AIRFIELD_X, rsz = WORLD.AIRFIELD_Z + 90;
+  const runwayY = WORLD.GROUND_Y + terrainHeight(rsx, rsz) + 1.5;
+  plane.position.x = rsx; plane.position.y = runwayY; plane.position.z = rsz;
   plane.pitch = 0; plane.roll = 0; plane.yaw = 0;
   plane.hp = PLAYER.HP; plane.alive = true; plane.damageFlash = 0;
   plane.dying = false; plane.justCrashed = false;
@@ -667,19 +668,19 @@ function loop(t) {
   if (gs.state === STATE.MENU) {
     menuFokker.visible = true;
     menuFokkerAngle += dt * 0.15;
+    const mfX = WORLD.AIRFIELD_X, mfZ = WORLD.AIRFIELD_Z;
     const mfY = WORLD.GROUND_Y + 3;
-    menuFokker.position.set(0, mfY, 0);
-    menuFokker.rotation.y = Math.PI; // static, nose facing camera
+    menuFokker.position.set(mfX, mfY, mfZ);
+    menuFokker.rotation.y = Math.PI;
     menuFokker.rotation.x = 0;
     menuFokker.rotation.z = -0.1;
-    // Camera slowly orbits the stationary plane.
     camera.position.set(
-      Math.sin(menuFokkerAngle) * 14,
+      mfX + Math.sin(menuFokkerAngle) * 14,
       mfY + 4.5,
-      Math.cos(menuFokkerAngle) * 14
+      mfZ + Math.cos(menuFokkerAngle) * 14
     );
     camera.rotation.order = 'YXZ';
-    camera.lookAt(0, mfY + 1, 0);
+    camera.lookAt(mfX, mfY + 1, mfZ);
     // Spin prop blades.
     if (menuFokker.userData.propBlades) {
       menuFokker.userData.propBlades.rotation.z += 0.5;
@@ -724,6 +725,7 @@ function loop(t) {
     gunFlash: guns.flashTimer,
     waypoint: gs.state === STATE.PLAYING ? computeWaypoint(enemies, plane, camera) : null,
     allies: mpMode ? Array.from(mpGetRemotes().keys()).map(uid => mpInterpolateRemote(uid)).filter(Boolean) : [],
+    pickups: healthPickups.filter(hp => hp.active).map(hp => hp.position),
     ammo: gs.ammo,
     maxAmmo: gs.maxAmmo,
     reloading: gs.reloading,

@@ -287,6 +287,7 @@ export function drawHud(ctx, state) {
     drawMinimap(ctx, state.player, state.enemies, {
       cx: CANVAS_W - 200, cy: 200, radius: 180,
       allies: state.allies,
+      pickups: state.pickups,
     });
 
     const d = Math.hypot(state.player.position.x, state.player.position.z);
@@ -408,7 +409,7 @@ export function drawHud(ctx, state) {
     ctx.beginPath(); ctx.roundRect(mx - btnW / 2 + 3, mpY + 3, btnW - 6, btnH - 6, 10); ctx.fill();
     ctx.fillStyle = '#f0e0b0';
     ctx.font = 'bold 44px serif';
-    ctx.fillText('MULTIPLAYER', mx, mpY + 64);
+    ctx.fillText('CO-OP', mx, mpY + 64);
     drawHud._mpBtn = { x: mx - btnW / 2, y: mpY, w: btnW, h: btnH };
 
     // Best score.

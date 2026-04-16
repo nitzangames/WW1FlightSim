@@ -29,10 +29,11 @@ function smoothstep(a, b, x) {
 export function terrainHeight(x, z) {
   const r = Math.hypot(x, z);
 
-  // Flatten the airfield zone near the origin. The runway is ~220m along Z
-  // and ~80m wide. Smoothly blend back to normal terrain outside that area.
-  const airfieldBlend = smoothstep(25, 60, Math.abs(x)) *
-                        smoothstep(120, 180, Math.abs(z));
+  // Flatten the airfield zone. The runway is ~220m along Z and ~80m wide.
+  // Smoothly blend back to normal terrain outside that area.
+  const afx = Math.abs(x - WORLD.AIRFIELD_X);
+  const afz = Math.abs(z - WORLD.AIRFIELD_Z);
+  const airfieldBlend = smoothstep(25, 60, afx) * smoothstep(120, 180, afz);
 
   // Base rolling hills, more pronounced than before.
   const hills =
