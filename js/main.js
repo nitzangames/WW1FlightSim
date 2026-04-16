@@ -12,7 +12,7 @@ import { Guns, EnemyTracers } from './weapons.js';
 import { ENEMY, WORLD } from './config.js';
 import { Balloon, Zeppelin } from './targets.js';
 import { GameState, STATE } from './game.js';
-import { initAudio, startEngine, stopEngine, setEnginePitch, playGunBurst, playHit, playKill } from './audio.js';
+import { initAudio, startWind, stopWind, playFlyby, playExplosion, playDeathWhine, playGunBurst, playHit, playKill } from './audio.js';
 
 const gameCanvas = document.getElementById('game-canvas');
 const overlayCanvas = document.getElementById('overlay-canvas');
@@ -172,8 +172,8 @@ function loop(t) {
   enemyTracers.update(dt);
 
   const isPlaying = gs.state === STATE.PLAYING;
-  if (isPlaying && !wasPlaying) startEngine();
-  if (!isPlaying && wasPlaying) stopEngine();
+  if (isPlaying && !wasPlaying) startWind();
+  if (!isPlaying && wasPlaying) stopWind();
   wasPlaying = isPlaying;
 
   let gunState = null;
@@ -233,7 +233,7 @@ function loop(t) {
       }
       if (e.justExploded) {
         // Ground impact: big fireball + explosion sound + scorch. Scale to size.
-        playKill();
+        playExplosion();
         const boom = e.type === 'zeppelin' ? 70 : e.type === 'balloon' ? 40 : 30;
         const boomSpread = e.type === 'zeppelin' ? 32 : e.type === 'balloon' ? 20 : 16;
         const scorchSize = e.type === 'zeppelin' ? 3.0 : e.type === 'balloon' ? 1.6 : 1.0 + Math.random() * 0.4;
@@ -332,6 +332,7 @@ function loop(t) {
     if (plane.hp <= 0 && plane.alive) {
       plane.startDying();
       playKill();
+      playDeathWhine();
     }
     // Continuous thick smoke trail from the dying plane.
     if (plane.dying) {
@@ -343,6 +344,7 @@ function loop(t) {
     }
     if (plane.justCrashed) {
       // Impact fireball for the player plane too + scorch.
+      playExplosion();
       for (let i = 0; i < 40; i++) {
         const ox = plane.position.x + (Math.random() - 0.5) * 18;
         const oy = plane.position.y + Math.random() * 8;
@@ -353,7 +355,18 @@ function loop(t) {
       placeScorch(scorchPool, plane.position.x, gy, plane.position.z, 1.4);
       gs.die();
     }
-    setEnginePitch(80 + Math.abs(plane._targetPitchRate) * 80);
+    // Flyby sound when any alive enemy passes close.
+    for (const e of enemies) {
+      if (!e.alive || e.type !== 'plane') continue;
+      const dx = e.position.x - plane.position.x;
+      const dy = e.position.y - plane.position.y;
+      const dz = e.position.z - plane.position.z;
+      const dist = Math.hypot(dx, dy, dz);
+      // Trigger when within 60m — use a cooldown on the enemy so it doesn't
+      // spam. Re-arm after the enemy moves beyond 120m.
+      if (dist < 60 && !e._flybyPlayed) { playFlyby(); e._flybyPlayed = true; }
+      if (dist > 120) e._flybyPlayed = false;
+    }
   }
 
   if (gs.state === STATE.GAMEOVER) {

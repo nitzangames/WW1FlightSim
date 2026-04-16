@@ -251,3 +251,19 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > plane momentum works great. Zepplins and Balloons still don't look good. They both seem to disappear when they die. Fire looks great, we should add it to Balloons and Zepplins. They should also have fire billowing when they are hit and close to dying.
 
 (→ big fireball burst at moment of death (20 sprites for zep, 12 for balloon), fire scatter scaled to target size during fall (±25m zep, ±3m balloon), low-HP targets emit continuous fire+smoke while still alive; fire pool bumped to 200; maxHp stored on all targets)
+
+## 47. Airship disappear bug + zeppelin tilt fix
+
+> the zepplin still disappears when it blows up. It needs to slowly fall to the ground while on fire, tilting toward the ground as it falls.
+
+(→ root cause: startDying set alive=false which spawner removed immediately; fix: alive stays true during fall, false only on ground impact; zeppelin now uses ballistic drift + 35° progressive nose-tilt over 8-9 seconds)
+
+## 48. What's next?
+
+> much better! What else do we have to work on?
+
+## 49. Audio + avoidance + clouds + full polish/gameplay/content wish-list
+
+> engine sound should only appear when a plane flies past. We don't want continous noise. Also I want enemy planes to try to avoid me. Right now they fly right through. Polish - lets add all those. Gameplay, everything except altitude floor. Content, I like it all. I think we shoudl work on the current clouds too, they look like white dots right now.
+
+(→ batch 1: replace continuous engine drone with flyby whooshes + quiet wind ambient; add enemy break-off behavior at close range so they don't ram; replace single-sprite clouds with multi-puff clusters for volume; then continue through the remaining polish/gameplay/content list)

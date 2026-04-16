@@ -151,16 +151,30 @@ export class Enemy {
   }
 
   computeTargetPoint(player) {
+    const dx = player.position.x - this.position.x;
+    const dy = player.position.y - this.position.y;
+    const dz = player.position.z - this.position.z;
+    const dist = Math.hypot(dx, dy, dz);
+
+    // Break off when too close to avoid ramming — climb hard and veer
+    // to one side, then re-engage after gaining distance.
+    if (dist < 55) {
+      const side = (this.position.x * 7 + this.position.z * 13) % 2 < 1 ? 1 : -1;
+      return {
+        x: this.position.x + this.forward.x * 120 + side * 70,
+        y: this.position.y + 80,
+        z: this.position.z + this.forward.z * 120,
+      };
+    }
+
     if (this.mode === 'jouster') {
-      // Aim for a point 200m ahead of player's nose
       return {
         x: player.position.x + player.forward.x * 200,
         y: player.position.y + player.forward.y * 200,
         z: player.position.z + player.forward.z * 200,
       };
     }
-    // Chaser: aim at a lead point ~60m ahead of the player so we close
-    // faster than a pure tail-chase.
+    // Chaser: aim at a lead point ~60m ahead of the player.
     return {
       x: player.position.x + player.forward.x * 60,
       y: player.position.y + player.forward.y * 60,

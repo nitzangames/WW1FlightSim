@@ -203,25 +203,39 @@ export function buildWorld(scene) {
     }
   }
 
-  // Clouds: billboard sprites scattered
+  // Clouds: multi-puff clusters so each cloud has volume, not just a dot.
+  // Larger canvas texture with a soft falloff, then 4-6 sprites per cluster
+  // at randomised offsets to build a cumulus shape.
   const cloudCanvas = document.createElement('canvas');
-  cloudCanvas.width = 128; cloudCanvas.height = 128;
+  cloudCanvas.width = 256; cloudCanvas.height = 256;
   const cctx = cloudCanvas.getContext('2d');
-  const grad = cctx.createRadialGradient(64, 64, 10, 64, 64, 64);
-  grad.addColorStop(0, 'rgba(255,255,255,0.85)');
-  grad.addColorStop(1, 'rgba(255,255,255,0)');
-  cctx.fillStyle = grad; cctx.fillRect(0, 0, 128, 128);
+  const cgrad = cctx.createRadialGradient(128, 128, 20, 128, 128, 128);
+  cgrad.addColorStop(0, 'rgba(255,255,255,0.92)');
+  cgrad.addColorStop(0.5, 'rgba(255,255,255,0.55)');
+  cgrad.addColorStop(1, 'rgba(255,255,255,0)');
+  cctx.fillStyle = cgrad; cctx.fillRect(0, 0, 256, 256);
   const cloudTex = new THREE.CanvasTexture(cloudCanvas);
-  const cloudMat = new THREE.SpriteMaterial({ map: cloudTex, transparent: true, fog: true });
+  const cloudMat = new THREE.SpriteMaterial({ map: cloudTex, transparent: true, fog: true, depthWrite: false });
 
-  for (let i = 0; i < 25; i++) {
-    const s = new THREE.Sprite(cloudMat);
-    const a = Math.random() * Math.PI * 2;
-    const r = 200 + Math.random() * 1500;
-    s.position.set(Math.cos(a) * r, 150 + Math.random() * 350, Math.sin(a) * r);
-    const size = 60 + Math.random() * 120;
-    s.scale.set(size, size, size);
-    scene.add(s);
+  const CLOUD_CLUSTERS = 15;
+  const PUFFS_PER_CLOUD = 5;
+  for (let c = 0; c < CLOUD_CLUSTERS; c++) {
+    const ca = Math.random() * Math.PI * 2;
+    const cr = 250 + Math.random() * 1400;
+    const cx = Math.cos(ca) * cr;
+    const cy = 180 + Math.random() * 300;
+    const cz = Math.sin(ca) * cr;
+    const baseSize = 90 + Math.random() * 80;
+    for (let p = 0; p < PUFFS_PER_CLOUD; p++) {
+      const s = new THREE.Sprite(cloudMat);
+      const ox = (Math.random() - 0.5) * baseSize * 0.9;
+      const oy = (Math.random() - 0.5) * baseSize * 0.25;
+      const oz = (Math.random() - 0.5) * baseSize * 0.9;
+      s.position.set(cx + ox, cy + oy, cz + oz);
+      const puffSize = baseSize * (0.65 + Math.random() * 0.5);
+      s.scale.set(puffSize, puffSize, puffSize);
+      scene.add(s);
+    }
   }
 
   return { ground };
