@@ -273,3 +273,9 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 > looks great. The SPD never seems to change. Maybe we should put the HP there instead. Lets move on to polish
 
 (→ replace SPD gauge with HP; add screen shake on damage; spinning propeller blades on planes; exhaust contrail behind player)
+
+## 51. Keep going
+
+> yes keep going
+
+(→ gameplay batch: score breakdown screen with rank titles, wave announcements, ammo/reload mechanic)

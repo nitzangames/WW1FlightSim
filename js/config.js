@@ -1,4 +1,4 @@
-export const VERSION = 'v0.5.1';
+export const VERSION = 'v0.6.0';
 
 export const CANVAS_W = 1080;
 export const CANVAS_H = 1920;

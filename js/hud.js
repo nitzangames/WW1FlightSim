@@ -250,7 +250,7 @@ export function drawHud(ctx, state) {
     drawCockpit(ctx, state);
   }
 
-  // Score top-left
+  // Score top-left + ammo bar
   ctx.fillStyle = '#ffffffdd';
   ctx.font = 'bold 42px sans-serif';
   ctx.textAlign = 'left';
@@ -258,6 +258,29 @@ export function drawHud(ctx, state) {
   ctx.font = '24px sans-serif';
   ctx.fillStyle = '#ffffff99';
   ctx.fillText(`BEST ${state.best}`, 32, 100);
+
+  // Ammo bar under kills display (only during play)
+  if (!state.menu && !state.gameOver && state.ammo !== undefined) {
+    const ammoW = 180, ammoH = 12, ammoX = 32, ammoY = 114;
+    const ammoPct = Math.max(0, state.ammo / (state.maxAmmo || 200));
+    ctx.fillStyle = '#000000aa';
+    ctx.fillRect(ammoX - 1, ammoY - 1, ammoW + 2, ammoH + 2);
+    ctx.fillStyle = state.reloading ? '#888844' : ammoPct < 0.2 ? '#ff4444' : '#dda844';
+    ctx.fillRect(ammoX, ammoY, ammoW * ammoPct, ammoH);
+    ctx.fillStyle = '#ffffffaa';
+    ctx.font = '16px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(state.reloading ? 'RELOADING...' : `AMMO ${state.ammo}`, ammoX, ammoY + ammoH + 16);
+  }
+
+  // Wave announcement flash (top-center)
+  if (state.waveFlash > 0 && !state.menu && !state.gameOver) {
+    const alpha = Math.min(1, state.waveFlash * 1.5);
+    ctx.fillStyle = `rgba(255,214,90,${alpha.toFixed(2)})`;
+    ctx.font = 'bold 72px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`WAVE ${state.wave}`, CANVAS_W / 2, CANVAS_H * 0.18);
+  }
 
   // Joystick visual
   if (state.joystick && state.joystick.active) {
@@ -284,23 +307,46 @@ export function drawHud(ctx, state) {
     }
   }
 
-  // Game over
+  // Game over — score breakdown + rank
   if (state.gameOver) {
-    ctx.fillStyle = '#000000bb';
+    ctx.fillStyle = '#000000cc';
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    const mx = CANVAS_W / 2;
+    let y = CANVAS_H * 0.22;
+
     ctx.fillStyle = '#ffeded';
     ctx.textAlign = 'center';
     ctx.font = 'bold 96px serif';
-    ctx.fillText('SHOT DOWN', CANVAS_W / 2, CANVAS_H / 2 - 60);
-    ctx.font = 'bold 48px sans-serif';
+    ctx.fillText('SHOT DOWN', mx, y);
+    y += 80;
+
+    // Rank title
+    ctx.fillStyle = '#ffd65a';
+    ctx.font = 'bold 52px serif';
+    ctx.fillText(state.rank || 'Cadet', mx, y);
+    y += 70;
+
+    // Kill breakdown
     ctx.fillStyle = '#ffffffdd';
-    ctx.fillText(`KILLS ${state.kills}`, CANVAS_W / 2, CANVAS_H / 2 + 20);
-    ctx.fillStyle = '#ffffff99';
-    ctx.font = '32px sans-serif';
-    ctx.fillText(`BEST ${state.best}`, CANVAS_W / 2, CANVAS_H / 2 + 70);
-    ctx.fillStyle = '#ffffffaa';
+    ctx.font = 'bold 40px sans-serif';
+    ctx.fillText(`TOTAL KILLS: ${state.kills}`, mx, y);
+    y += 55;
+
     ctx.font = '28px sans-serif';
-    ctx.fillText('TAP TO FLY AGAIN', CANVAS_W / 2, CANVAS_H / 2 + 160);
+    ctx.fillStyle = '#ffffffaa';
+    if (state.planeKills > 0) { ctx.fillText(`Planes: ${state.planeKills}`, mx, y); y += 38; }
+    if (state.balloonKills > 0) { ctx.fillText(`Balloons: ${state.balloonKills}`, mx, y); y += 38; }
+    if (state.zeppelinKills > 0) { ctx.fillText(`Zeppelins: ${state.zeppelinKills}`, mx, y); y += 38; }
+    y += 20;
+
+    ctx.fillStyle = '#ffffff88';
+    ctx.font = '28px sans-serif';
+    ctx.fillText(`BEST ${state.best}`, mx, y);
+    y += 80;
+
+    ctx.fillStyle = '#ffffffcc';
+    ctx.font = '30px sans-serif';
+    ctx.fillText('TAP TO FLY AGAIN', mx, y);
   }
 
   // Menu

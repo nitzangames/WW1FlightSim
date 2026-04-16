@@ -61,14 +61,15 @@ export class Guns {
     this.bulletSpeed = 500; // m/s, visual
   }
 
-  update(dt, player, enemies) {
+  update(dt, player, enemies, canFire = true) {
     this.cooldown -= dt;
     this.flashTimer -= dt;
 
-    // Find best target in cone (closest)
+    // Find best target in cone (closest) — skip if out of ammo.
     let target = null;
     let bestDist2 = Infinity;
-    for (const e of enemies) {
+    if (!canFire) { /* out of ammo / reloading */ }
+    else for (const e of enemies) {
       if (!e.alive || e.dying) continue;
       if (inCone(player.position, player.forward, e.position, { angle: GUN.CONE_DEG * DEG, range: GUN.RANGE })) {
         const d2 = dist2(player.position, e.position);

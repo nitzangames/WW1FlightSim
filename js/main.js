@@ -201,10 +201,17 @@ function loop(t) {
     }
     spawner.removeDead(enemies);
     spawner.maybeSpawn(enemies, plane, gs.kills);
-    gunState = guns.update(dt, plane, enemies);
-    if (gunState.firing) playGunBurst();
+    // Ammo / reload gating — guns only fire if we have ammo.
+    gs.updateReload(dt);
+    const canFire = !gs.reloading && gs.ammo > 0;
+    gunState = guns.update(dt, plane, enemies, canFire);
+    if (gunState.firing) {
+      gs.tryFire();
+      playGunBurst();
+    }
     if (plane.hp < prevPlayerHp) playHit();
     prevPlayerHp = plane.hp;
+    gs.updateWave(dt);
 
     // Downed enemies begin a death spiral (stay alive for the animation);
     // they're cleaned up when they hit the ground and explode.
@@ -212,6 +219,9 @@ function loop(t) {
       if (e.alive && e.hp <= 0 && !e.dying) {
         e.startDying();
         gs.kills += e.killValue || 1;
+        if (e.type === 'plane') gs.planeKills++;
+        else if (e.type === 'balloon') gs.balloonKills++;
+        else if (e.type === 'zeppelin') gs.zeppelinKills++;
         playKill();
         // Initial "catches fire" burst — scaled to size.
         const ignite = e.type === 'zeppelin' ? 28 : e.type === 'balloon' ? 14 : 4;
@@ -413,6 +423,15 @@ function loop(t) {
     rpmJitter: Math.sin(t * 0.01) * 0.5 + Math.sin(t * 0.017) * 0.3,
     gunFlash: guns.flashTimer,
     waypoint: gs.state === STATE.PLAYING ? computeWaypoint(enemies, plane, camera) : null,
+    ammo: gs.ammo,
+    maxAmmo: gs.maxAmmo,
+    reloading: gs.reloading,
+    wave: gs.wave,
+    waveFlash: gs.waveFlash,
+    rank: gs.rank,
+    planeKills: gs.planeKills,
+    balloonKills: gs.balloonKills,
+    zeppelinKills: gs.zeppelinKills,
   });
   rafId = requestAnimationFrame(loop);
 }
