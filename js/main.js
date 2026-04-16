@@ -10,7 +10,7 @@ import { Spawner } from './enemy-spawner.js';
 import { Enemy } from './enemy.js';
 import { Guns, EnemyTracers } from './weapons.js';
 import { PLAYER, ENEMY, WORLD } from './config.js';
-import { Balloon, Zeppelin, Artillery } from './targets.js';
+import { Balloon, Zeppelin, Artillery, HealthPickup } from './targets.js';
 import { Weather } from './weather.js';
 import { GameState, STATE, saveSettings } from './game.js';
 import { initAudio, startWind, stopWind, playFlyby, playExplosion, playDeathWhine, playGunBurst, playHit, playKill } from './audio.js';
@@ -53,6 +53,7 @@ let menuFokkerAngle = 0;
 
 const weather = new Weather(scene);
 const enemies = [];
+const healthPickups = [];
 const spawner = new Spawner(scene);
 const guns = new Guns(scene);
 // In MP, non-host relays damage to the host instead of applying locally.
@@ -202,6 +203,20 @@ function resetGameObjects() {
     const art = new Artillery({ x: Math.sin(aa) * ar, z: Math.cos(aa) * ar });
     enemies.push(art);
     scene.add(art.mesh);
+  }
+
+  // Health pickups scattered around the map (3 per game).
+  for (const hp of healthPickups) scene.remove(hp.mesh);
+  healthPickups.length = 0;
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2 + Math.random() * 1.2;
+    const r = 300 + Math.random() * 600;
+    const x = Math.sin(a) * r;
+    const z = Math.cos(a) * r;
+    const y = 60 + Math.random() * 80;
+    const hp = new HealthPickup({ x, y, z });
+    healthPickups.push(hp);
+    scene.add(hp.mesh);
   }
 
   // Weather variation for this run.
@@ -616,6 +631,18 @@ function loop(t) {
         }
       }
       mpUpdateRemotePlayers();
+    }
+
+    // Health pickups: bob + spin, check collection.
+    for (const hp of healthPickups) {
+      hp.update(dt);
+      if (hp.active && hp.checkPickup(plane.position)) {
+        hp.collect();
+        plane.hp = Math.min(plane.maxHp, plane.hp + hp.healAmount);
+        // Green flash feedback.
+        plane.damageFlash = Math.max(plane.damageFlash, 0.3);
+        playKill(); // reuse the ascending tone as a "pickup" jingle
+      }
     }
 
     // Flyby sound when any alive enemy passes close.

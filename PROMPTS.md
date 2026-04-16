@@ -335,3 +335,16 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 ## 64. Pause + settings menu
 
 > I want to add a pause and settings menu
+
+## 65. Invert Y controls
+
+> also give me an option to flip the vertical controls in the settings menu, so up is down and down is up, like in a real plane
+
+## 66. HP pickup balloons mockups
+
+> I want to add balloons that give you HP, can you mockup a few ideas and show them to me on the localhost?
+
+## 67. Pick A + cross visible + fly through to replenish
+
+> I like A, but there should also be a cross on the balloon
+> picking it up should replenish your HP

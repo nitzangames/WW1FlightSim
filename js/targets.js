@@ -1,4 +1,4 @@
-import { buildBalloon, buildZeppelin, buildArtillery } from './models.js';
+import { buildBalloon, buildZeppelin, buildArtillery, buildHealthPickup } from './models.js';
 import { WORLD } from './config.js';
 import { terrainHeight } from './world.js';
 
@@ -239,6 +239,41 @@ export class Artillery {
       this.yaw = Math.atan2(-dx, -dz);
       this.mesh.rotation.y = this.yaw;
     }
+  }
+}
+
+// Health pickup: fly through to restore HP. Not an enemy — doesn't appear in
+// the enemies array. Managed separately in main.js.
+export class HealthPickup {
+  constructor({ x, y, z }) {
+    this.position = { x, y, z };
+    this.mesh = buildHealthPickup();
+    this.mesh.position.set(x, y, z);
+    this.active = true;
+    this.bobTime = Math.random() * Math.PI * 2;
+    this.pickupRadius = 12; // fly within 12m to collect
+    this.healAmount = 40;
+  }
+
+  update(dt) {
+    if (!this.active) return;
+    this.bobTime += dt * 0.8;
+    this.mesh.position.y = this.position.y + Math.sin(this.bobTime) * 1.5;
+    this.mesh.rotation.y += dt * 0.3; // slow spin
+  }
+
+  // Returns true if the player is close enough to collect.
+  checkPickup(playerPos) {
+    if (!this.active) return false;
+    const dx = playerPos.x - this.position.x;
+    const dy = playerPos.y - this.position.y;
+    const dz = playerPos.z - this.position.z;
+    return Math.hypot(dx, dy, dz) < this.pickupRadius;
+  }
+
+  collect() {
+    this.active = false;
+    this.mesh.visible = false;
   }
 }
 

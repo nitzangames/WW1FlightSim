@@ -207,6 +207,50 @@ export function buildAirfield() {
   return group;
 }
 
+// Health pickup: white balloon with red crosses + supply crate below.
+export function buildHealthPickup() {
+  const group = new THREE.Group();
+  const white = new THREE.MeshLambertMaterial({ color: 0xf0f0f0 });
+  const red = new THREE.MeshLambertMaterial({ color: 0xcc2020 });
+  const brown = new THREE.MeshLambertMaterial({ color: 0x6a4a2a });
+  const rope = new THREE.MeshLambertMaterial({ color: 0x2a2a2a });
+
+  // White balloon
+  const bag = new THREE.Mesh(new THREE.SphereGeometry(2.8, 16, 12), white);
+  bag.scale.set(1, 1, 1.3);
+  group.add(bag);
+
+  // Red crosses on all 4 sides.
+  function addCross(gx, gy, gz, hw, hh, hd) {
+    const h = new THREE.Mesh(new THREE.BoxGeometry(hw, hh, hd), red);
+    h.position.set(gx, gy, gz); group.add(h);
+    const v = new THREE.Mesh(new THREE.BoxGeometry(hh, hw, hd), red);
+    v.position.set(gx, gy, gz); group.add(v);
+  }
+  addCross(2.82, 0, 0, 0.12, 2.2, 0.8);   // +X
+  addCross(-2.82, 0, 0, 0.12, 2.2, 0.8);  // -X
+  addCross(0, 0, 3.66, 2.2, 0.8, 0.12);   // +Z
+  addCross(0, 0, -3.66, 2.2, 0.8, 0.12);  // -Z
+
+  // Supply crate
+  const crate = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 1.6), brown);
+  crate.position.set(0, -4, 0);
+  group.add(crate);
+  const cc1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.4, 0.05), red);
+  cc1.position.set(0, -4, 0.82); group.add(cc1);
+  const cc2 = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, 0.05), red);
+  cc2.position.set(0, -4, 0.82); group.add(cc2);
+
+  // Ropes
+  for (const [dx, dz] of [[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]]) {
+    const r = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.5, 4), rope);
+    r.position.set(dx * 0.5, -2.5, dz * 0.5);
+    group.add(r);
+  }
+
+  return group;
+}
+
 // Caquot triple-fin observation balloon. Tether hangs ~280m below the basket.
 export function buildBalloon() {
   const group = new THREE.Group();
