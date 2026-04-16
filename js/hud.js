@@ -366,6 +366,13 @@ export function drawHud(ctx, state) {
     ctx.font = '28px sans-serif';
     ctx.fillStyle = '#ffffff99';
     ctx.fillText(`BEST ${state.best}`, CANVAS_W / 2, CANVAS_H / 2 + 140);
+
+    // Multiplayer button hint (if available)
+    if (state.mpAvailable) {
+      ctx.fillStyle = '#ffd65acc';
+      ctx.font = 'bold 32px sans-serif';
+      ctx.fillText('TAP TWICE FOR CO-OP', CANVAS_W / 2, CANVAS_H / 2 + 220);
+    }
   }
 
   // Version

@@ -3,7 +3,9 @@ import { buildBiplane } from './models.js';
 import { terrainHeight } from './world.js';
 
 export class Enemy {
+  static _nextId = 1;
   constructor({ x, y, z, mode = 'chaser', variant = 'a' }) {
+    this.id = Enemy._nextId++;
     this.type = 'plane';
     this.killValue = 1;
     this.position = { x, y, z };

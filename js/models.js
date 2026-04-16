@@ -1,6 +1,9 @@
-export function buildFokker() {
+// Optional color for allied Fokkers in multiplayer (blue, green, yellow).
+const FOKKER_COLORS = [0xb01a1a, 0x1a4ab0, 0x1a8a3a, 0xb09a1a];
+
+export function buildFokker({ colorIndex = 0 } = {}) {
   const group = new THREE.Group();
-  const red = new THREE.MeshLambertMaterial({ color: 0xb01a1a });
+  const red = new THREE.MeshLambertMaterial({ color: FOKKER_COLORS[colorIndex] || FOKKER_COLORS[0] });
   const black = new THREE.MeshLambertMaterial({ color: 0x202020 });
   const wood = new THREE.MeshLambertMaterial({ color: 0x8a5a2a });
 

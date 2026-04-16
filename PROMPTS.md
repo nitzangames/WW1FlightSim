@@ -307,3 +307,7 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 ## 57. Pick A, change black to sky blue
 
 > A is the best. Change the black to blue to match the sky in the game.
+
+## 58. Co-op multiplayer (Option A — shared enemies, host-authoritative)
+
+> A

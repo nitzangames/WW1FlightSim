@@ -94,6 +94,8 @@ export class Guns {
       const lead = leadTarget(player.position, enemyWithVel, this.bulletSpeed);
       if (inCone(player.position, player.forward, lead, { angle: GUN.CONE_DEG * DEG, range: GUN.RANGE })) {
         target.hp -= GUN.DAMAGE_PER_ROUND;
+        // In multiplayer, non-host relays damage to host via callback.
+        if (this._onDamage) this._onDamage(target.id, GUN.DAMAGE_PER_ROUND);
       }
 
       this._tracerCounter++;

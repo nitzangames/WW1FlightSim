@@ -6,8 +6,11 @@ import { terrainHeight } from './world.js';
 // uniformly. Key fields: type, killValue, position, forward, yaw/pitch/roll,
 // hp, alive, dying, justExploded, firing, justFired, mesh, update(), startDying().
 
+let _targetId = 10000;
+
 export class Balloon {
   constructor({ x, y, z }) {
+    this.id = _targetId++;
     this.type = 'balloon';
     this.killValue = 1;
     this.position = { x, y, z };
@@ -77,6 +80,7 @@ export class Balloon {
 
 export class Zeppelin {
   constructor({ x, y, z }) {
+    this.id = _targetId++;
     this.type = 'zeppelin';
     this.killValue = 5;
     this.position = { x, y, z };
@@ -169,6 +173,7 @@ export class Zeppelin {
 // player when within range. Low HP — one good strafing run kills it.
 export class Artillery {
   constructor({ x, z }) {
+    this.id = _targetId++;
     this.type = 'artillery';
     this.killValue = 1;
     const y = WORLD.GROUND_Y + terrainHeight(x, z) + 0.5;

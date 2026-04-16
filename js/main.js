@@ -14,6 +14,8 @@ import { Balloon, Zeppelin, Artillery } from './targets.js';
 import { Weather } from './weather.js';
 import { GameState, STATE } from './game.js';
 import { initAudio, startWind, stopWind, playFlyby, playExplosion, playDeathWhine, playGunBurst, playHit, playKill } from './audio.js';
+import { mpAvailable, mpOpenLobby, mpIsHost, mpRoom, mpSend, mpInit, mpLeave,
+         mpSetMessageHandler, mpSetDisconnectHandler, mpGetRemotes, mpInterpolateRemote } from './multiplayer.js';
 
 const gameCanvas = document.getElementById('game-canvas');
 const overlayCanvas = document.getElementById('overlay-canvas');
@@ -41,6 +43,12 @@ const weather = new Weather(scene);
 const enemies = [];
 const spawner = new Spawner(scene);
 const guns = new Guns(scene);
+// In MP, non-host relays damage to the host instead of applying locally.
+guns._onDamage = (enemyId, amount) => {
+  if (mpMode && !mpIsHost()) {
+    mpSend({ type: 'damage-enemy', id: enemyId, amount });
+  }
+};
 const enemyTracers = new EnemyTracers(scene);
 
 const smokePool = createSmokePool(scene);
@@ -61,13 +69,35 @@ function screenToCanvas(clientX, clientY) {
     y: (clientY - rect.top) * (CANVAS_H / rect.height),
   };
 }
+let menuTapCount = 0;
+let menuTapTimer = 0;
 overlayCanvas.addEventListener('pointerdown', (e) => {
   initAudio();
   if (gs.state === STATE.MENU) {
-    resetGameObjects();
-    gs.startRun();
+    menuTapCount++;
+    clearTimeout(menuTapTimer);
+    if (menuTapCount >= 2 && mpAvailable()) {
+      // Double-tap → co-op multiplayer lobby.
+      menuTapCount = 0;
+      mpOpenLobby({
+        onStart: (isHost) => mpStartGame(isHost),
+        onCancel: () => { /* stay on menu */ },
+      });
+    } else {
+      // Single tap → solo game (after a short delay to check for double-tap).
+      menuTapTimer = setTimeout(() => {
+        if (gs.state === STATE.MENU) {
+          menuTapCount = 0;
+          mpMode = false;
+          resetGameObjects();
+          gs.startRun();
+        }
+      }, mpAvailable() ? 300 : 0);
+    }
   } else if (gs.state === STATE.GAMEOVER && gs.gameOverTimer <= 0) {
     gs.state = STATE.MENU;
+    if (mpMode) mpLeave();
+    mpMode = false;
   }
   const p = screenToCanvas(e.clientX, e.clientY);
   joystick.down(p.x, p.y);
@@ -140,6 +170,110 @@ function syncCameraToPlane() {
 
 let prevPlayerHp = plane.hp;
 let wasPlaying = false;
+
+// ---- Multiplayer ----
+let mpMode = false; // true when in a multiplayer session
+let mpSnapshotTimer = 0;
+let mpEnemySyncTimer = 0;
+const mpRemoteMeshes = new Map(); // userId → THREE.Mesh (allied Fokker)
+let mpNextColorIdx = 1; // 0=red (local), 1=blue, 2=green, 3=yellow
+
+mpInit(); // wire PlaySDK multiplayer events if available
+
+function mpStartGame(isHost) {
+  mpMode = true;
+  resetGameObjects();
+  gs.startRun();
+  if (isHost) {
+    // Host sends the game seed so all clients see same terrain (already
+    // deterministic via the noise functions — just need same weather).
+    mpSend({ type: 'game-start', weather: weather.condition });
+  }
+}
+
+mpSetMessageHandler((fromUserId, msg) => {
+  if (msg.type === 'game-start' && !mpIsHost()) {
+    // Non-host: start game with host's weather.
+    resetGameObjects();
+    gs.startRun();
+    mpMode = true;
+    if (msg.weather) weather.condition = msg.weather;
+  }
+  if (msg.type === 'damage-enemy' && mpIsHost()) {
+    // Host applies damage from remote player.
+    const e = enemies.find(en => en.id === msg.id);
+    if (e && e.alive && !e.dying) e.hp -= msg.amount;
+  }
+  if (msg.type === 'enemy-sync' && !mpIsHost()) {
+    // Non-host: update local enemy HP from host authority.
+    for (const es of msg.enemies) {
+      const e = enemies.find(en => en.id === es.id);
+      if (e) {
+        e.position.x = es.x; e.position.y = es.y; e.position.z = es.z;
+        e.yaw = es.yaw; e.pitch = es.pitch; e.roll = es.roll;
+        e.hp = es.hp;
+        if (es.dying && !e.dying && e.alive) e.startDying();
+        if (!es.alive && e.alive && !e.dying) {
+          e.alive = false;
+          e.justExploded = true;
+        }
+      }
+    }
+  }
+});
+
+mpSetDisconnectHandler(() => {
+  mpMode = false;
+  // Clean up remote meshes.
+  for (const [, mesh] of mpRemoteMeshes) scene.remove(mesh);
+  mpRemoteMeshes.clear();
+});
+
+function mpBroadcastPlaneState() {
+  mpSend({
+    type: 'plane-state',
+    t: Date.now(),
+    x: plane.position.x, y: plane.position.y, z: plane.position.z,
+    vx: plane.forward.x * plane.speed,
+    vy: plane.forward.y * plane.speed,
+    vz: plane.forward.z * plane.speed,
+    yaw: plane.yaw, pitch: plane.pitch, roll: plane.roll,
+    hp: plane.hp, alive: plane.alive, dying: plane.dying,
+    firing: !!(guns.flashTimer > 0),
+  });
+}
+
+function mpBroadcastEnemySync() {
+  mpSend({
+    type: 'enemy-sync',
+    enemies: enemies.map(e => ({
+      id: e.id, x: e.position.x, y: e.position.y, z: e.position.z,
+      yaw: e.yaw, pitch: e.pitch, roll: e.roll,
+      hp: e.hp, alive: e.alive, dying: e.dying,
+    })),
+  });
+}
+
+function mpUpdateRemotePlayers() {
+  const remotes = mpGetRemotes();
+  for (const [userId, remote] of remotes) {
+    const state = mpInterpolateRemote(userId);
+    if (!state) continue;
+    // Create mesh if new.
+    if (!mpRemoteMeshes.has(userId)) {
+      const m = buildFokker({ colorIndex: mpNextColorIdx++ % 4 });
+      m.rotation.order = 'YXZ';
+      scene.add(m);
+      mpRemoteMeshes.set(userId, m);
+    }
+    const mesh = mpRemoteMeshes.get(userId);
+    mesh.position.set(state.x, state.y, state.z);
+    mesh.rotation.y = state.yaw + Math.PI;
+    mesh.rotation.x = -state.pitch;
+    mesh.rotation.z = state.roll;
+    mesh.visible = state.alive || state.dying;
+  }
+}
 
 const _waypointNDC = new THREE.Vector3();
 function computeWaypoint(enemies, pl, cam) {
@@ -390,6 +524,19 @@ function loop(t) {
       placeScorch(scorchPool, plane.position.x, gy, plane.position.z, 1.4);
       gs.die();
     }
+    // Multiplayer: send snapshots + sync.
+    if (mpMode) {
+      mpSnapshotTimer -= dt * 1000;
+      if (mpSnapshotTimer <= 0) {
+        mpSnapshotTimer = 50; // 20 Hz
+        mpBroadcastPlaneState();
+        if (mpIsHost()) {
+          mpBroadcastEnemySync();
+        }
+      }
+      mpUpdateRemotePlayers();
+    }
+
     // Flyby sound when any alive enemy passes close.
     for (const e of enemies) {
       if (!e.alive || e.type !== 'plane') continue;
@@ -431,6 +578,7 @@ function loop(t) {
     best: gs.best,
     gameOver: gs.state === STATE.GAMEOVER,
     menu: gs.state === STATE.MENU,
+    mpAvailable: mpAvailable(),
     joystick: { active: joystick.active, ax: joystick.ax, ay: joystick.ay, x: joystick.x, y: joystick.y, radius: joystick.radius },
     player: plane,
     enemies,
