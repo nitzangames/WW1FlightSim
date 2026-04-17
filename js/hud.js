@@ -244,7 +244,7 @@ export function drawHud(ctx, state) {
   ctx.fillStyle = '#ffffffdd';
   ctx.font = 'bold 42px sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText(`KILLS ${state.kills}`, 32, 64);
+  ctx.fillText(`SCORE ${state.kills}`, 32, 64);
   ctx.font = '24px sans-serif';
   ctx.fillStyle = '#ffffff99';
   ctx.fillText(`BEST ${state.best}`, 32, 100);
@@ -318,18 +318,24 @@ export function drawHud(ctx, state) {
     ctx.fillText(state.rank || 'Cadet', mx, y);
     y += 70;
 
-    // Kill breakdown
+    // Score breakdown
     ctx.fillStyle = '#ffffffdd';
-    ctx.font = 'bold 40px sans-serif';
-    ctx.fillText(`TOTAL KILLS: ${state.kills}`, mx, y);
+    ctx.font = 'bold 44px sans-serif';
+    ctx.fillText(`SCORE: ${state.kills}`, mx, y);
     y += 55;
 
-    ctx.font = '28px sans-serif';
+    ctx.font = '26px sans-serif';
     ctx.fillStyle = '#ffffffaa';
-    if (state.planeKills > 0) { ctx.fillText(`Planes: ${state.planeKills}`, mx, y); y += 38; }
-    if (state.balloonKills > 0) { ctx.fillText(`Balloons: ${state.balloonKills}`, mx, y); y += 38; }
-    if (state.zeppelinKills > 0) { ctx.fillText(`Zeppelins: ${state.zeppelinKills}`, mx, y); y += 38; }
-    y += 20;
+    if (state.planeKills > 0) {
+      ctx.fillText(`Planes: ${state.planeKills} × 2 = ${state.planeKills * 2}`, mx, y); y += 34;
+    }
+    if (state.balloonKills > 0) {
+      ctx.fillText(`Balloons: ${state.balloonKills} × 1 = ${state.balloonKills}`, mx, y); y += 34;
+    }
+    if (state.zeppelinKills > 0) {
+      ctx.fillText(`Zeppelins: ${state.zeppelinKills} × 5 = ${state.zeppelinKills * 5}`, mx, y); y += 34;
+    }
+    y += 16;
 
     ctx.fillStyle = '#ffffff88';
     ctx.font = '28px sans-serif';
