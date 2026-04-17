@@ -7,7 +7,7 @@ export class Enemy {
   constructor({ x, y, z, mode = 'chaser', variant = 'a' }) {
     this.id = Enemy._nextId++;
     this.type = 'plane';
-    this.killValue = 1;
+    this.killValue = 2;
     this.position = { x, y, z };
     this.yaw = 0;
     this.pitch = 0;
