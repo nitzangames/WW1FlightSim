@@ -42,11 +42,12 @@ const _afCenterH = (function () {
 export function terrainHeight(x, z) {
   const r = Math.hypot(x, z);
 
-  // Flatten the airfield zone to the natural terrain level at its center
-  // (not to 0, which would create a pit). Smoothly blend to normal terrain.
-  const afx = Math.abs(x - WORLD.AIRFIELD_X);
-  const afz = Math.abs(z - _afTerrainZ); // z is -worldZ in terrain coords
-  const airfieldBlend = smoothstep(25, 60, afx) * smoothstep(120, 180, afz);
+  // Flatten the airfield zone using a CIRCULAR blend so it doesn't create
+  // cross-shaped strips that cut into the mountains. The flat zone covers
+  // a 130m radius (enough for the 220m runway), blending to normal terrain
+  // by 240m out.
+  const afDist = Math.hypot(x - WORLD.AIRFIELD_X, z - _afTerrainZ);
+  const airfieldBlend = smoothstep(130, 240, afDist);
 
   // Base rolling hills, more pronounced than before.
   const hills =
