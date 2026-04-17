@@ -34,8 +34,8 @@ export const GUN = {
 export const WORLD = {
   GROUND_Y: -200,
   GROUND_SIZE: 6000,
-  AIRFIELD_X: 500,
-  AIRFIELD_Z: 400,
+  AIRFIELD_X: 1200,
+  AIRFIELD_Z: 1200,
   FOG_NEAR: 800,
   FOG_FAR: 2400,
   RETURN_SOFT: 1800,
