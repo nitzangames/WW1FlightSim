@@ -29,7 +29,7 @@ camera.rotation.order = 'YXZ';
 const cockpit = buildCockpit();
 camera.add(cockpit);
 scene.add(camera);
-buildWorld(scene);
+const worldData = buildWorld(scene);
 
 // Player plane and its mesh
 const plane = new Plane();
@@ -53,6 +53,7 @@ scene.add(menuFokker);
 let menuFokkerAngle = 0;
 
 const weather = new Weather(scene);
+weather.cloudMat = worldData.cloudMat;
 const enemies = [];
 const healthPickups = [];
 const spawner = new Spawner(scene);

@@ -227,5 +227,5 @@ export function buildWorld(scene) {
     }
   }
 
-  return { ground };
+  return { ground, cloudMat };
 }
