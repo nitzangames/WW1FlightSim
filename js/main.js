@@ -152,6 +152,12 @@ overlayCanvas.addEventListener('pointerdown', (e) => {
     return;
   }
 
+  // ---- Tutorial dismiss (during takeoff) ----
+  if (gs.showTutorial) {
+    gs.dismissTutorial();
+    return;
+  }
+
   // ---- Playing / Takeoff: check pause button first, then joystick ----
   if (inBtn(drawHud._pauseBtn)) {
     gs.pause();
@@ -404,6 +410,11 @@ function loop(t) {
   // ---- Takeoff sequence: auto-accelerate down the runway, lift off, hand to PLAYING ----
   if (isTakeoff) {
     gs.takeoffTime += dt;
+    // Auto-dismiss tutorial after timer expires.
+    if (gs.showTutorial) {
+      gs.tutorialTimer -= dt;
+      if (gs.tutorialTimer <= 0) gs.dismissTutorial();
+    }
     // Accelerate along the runway.
     if (!plane._takeoffSpeed) plane._takeoffSpeed = 0;
     plane._takeoffSpeed = Math.min(PLAYER.SPEED, plane._takeoffSpeed + 12 * dt);
@@ -725,6 +736,7 @@ function loop(t) {
     best: gs.best,
     gameOver: gs.state === STATE.GAMEOVER,
     menu: gs.state === STATE.MENU,
+    showTutorial: gs.showTutorial,
     paused: gs.state === STATE.PAUSED,
     settingsOpen: gs.settingsOpen,
     settings: gs.settings,

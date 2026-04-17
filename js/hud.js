@@ -464,6 +464,43 @@ export function drawHud(ctx, state) {
     }
   }
 
+  // Tutorial popup — shown once during first takeoff.
+  if (state.showTutorial) {
+    const mx = CANVAS_W / 2;
+    const boxW = CANVAS_W * 0.82, boxH = 520;
+    const boxX = mx - boxW / 2, boxY = CANVAS_H * 0.18;
+
+    // Dark rounded panel
+    ctx.fillStyle = 'rgba(20,15,10,0.88)';
+    ctx.beginPath(); ctx.roundRect(boxX, boxY, boxW, boxH, 20); ctx.fill();
+    ctx.strokeStyle = '#8a6a30';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.roundRect(boxX, boxY, boxW, boxH, 20); ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffd65a';
+    ctx.font = 'bold 48px serif';
+    ctx.fillText('HOW TO FLY', mx, boxY + 70);
+
+    ctx.fillStyle = '#ffffffdd';
+    ctx.font = '30px sans-serif';
+    let ty = boxY + 130;
+    ctx.fillText('Touch & drag anywhere', mx, ty); ty += 44;
+    ctx.fillText('to steer your plane', mx, ty); ty += 70;
+
+    ctx.fillStyle = '#ffd65a';
+    ctx.font = 'bold 30px sans-serif';
+    ctx.fillText('Guns fire automatically', mx, ty); ty += 40;
+    ctx.fillStyle = '#ffffffbb';
+    ctx.font = '26px sans-serif';
+    ctx.fillText('when an enemy is in your', mx, ty); ty += 34;
+    ctx.fillText('crosshair', mx, ty); ty += 70;
+
+    ctx.fillStyle = '#ffffff66';
+    ctx.font = '24px sans-serif';
+    ctx.fillText('TAP TO DISMISS', mx, ty);
+  }
+
   // Pause button — small icon top-left (below kills/ammo) during play.
   if (!state.menu && !state.gameOver && !state.paused) {
     const pbX = 32, pbY = 152, pbS = 42;

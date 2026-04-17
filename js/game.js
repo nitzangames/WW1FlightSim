@@ -47,6 +47,8 @@ export class GameState {
   startRun() {
     this.state = STATE.TAKEOFF;
     this.takeoffTime = 0;
+    this.showTutorial = !localStorage.getItem('ww1.tutorialSeen');
+    this.tutorialTimer = 6; // auto-dismiss after 6s
     this.kills = 0;
     this.planeKills = 0;
     this.balloonKills = 0;
@@ -66,6 +68,11 @@ export class GameState {
       this.best = this.kills;
       localStorage.setItem('ww1.best', String(this.best));
     }
+  }
+
+  dismissTutorial() {
+    this.showTutorial = false;
+    try { localStorage.setItem('ww1.tutorialSeen', '1'); } catch (_) {}
   }
 
   pause() {
