@@ -54,6 +54,7 @@ let menuFokkerAngle = 0;
 
 const weather = new Weather(scene);
 weather.cloudMat = worldData.cloudMat;
+weather.skyMat = worldData.skyMat;
 const enemies = [];
 const healthPickups = [];
 const spawner = new Spawner(scene);
