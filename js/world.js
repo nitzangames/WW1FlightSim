@@ -199,37 +199,31 @@ export function buildWorld(scene) {
   // Clouds: multi-puff clusters so each cloud has volume, not just a dot.
   // Larger canvas texture with a soft falloff, then 4-6 sprites per cluster
   // at randomised offsets to build a cumulus shape.
-  // Clouds: multi-puff clusters. Soft radial gradient on a 256×256 canvas.
-  const cloudCanvas = document.createElement('canvas');
-  cloudCanvas.width = 256; cloudCanvas.height = 256;
-  const cctx = cloudCanvas.getContext('2d');
-  const cgrad = cctx.createRadialGradient(128, 128, 20, 128, 128, 128);
-  cgrad.addColorStop(0, 'rgba(255,255,255,0.92)');
-  cgrad.addColorStop(0.5, 'rgba(255,255,255,0.55)');
-  cgrad.addColorStop(1, 'rgba(255,255,255,0)');
-  cctx.fillStyle = cgrad; cctx.fillRect(0, 0, 256, 256);
-  const cloudTex = new THREE.CanvasTexture(cloudCanvas);
-  const cloudMat = new THREE.SpriteMaterial({ map: cloudTex, transparent: true, fog: true, depthWrite: false });
+  // Clouds: low-poly sphere puffs in clusters. Uses geometry instead of
+  // canvas textures to avoid RGB dithering on mobile GPUs.
+  const cloudGeo = new THREE.SphereGeometry(1, 8, 6);
+  const cloudMat = new THREE.MeshBasicMaterial({
+    color: 0xffffff, transparent: true, opacity: 0.72, depthWrite: false, fog: true,
+  });
 
   const CLOUD_CLUSTERS = 18;
-  const PUFFS_PER_CLOUD = 10;
+  const PUFFS_PER_CLOUD = 8;
   for (let c = 0; c < CLOUD_CLUSTERS; c++) {
     const ca = Math.random() * Math.PI * 2;
     const cr = 250 + Math.random() * 1400;
-    const cx = Math.cos(ca) * cr;
-    const cy = 180 + Math.random() * 280;
-    const cz = Math.sin(ca) * cr;
-    const baseSize = 130 + Math.random() * 100;
+    const ccx = Math.cos(ca) * cr;
+    const ccy = 180 + Math.random() * 280;
+    const ccz = Math.sin(ca) * cr;
+    const baseSize = 28 + Math.random() * 22;
     for (let p = 0; p < PUFFS_PER_CLOUD; p++) {
-      const s = new THREE.Sprite(cloudMat);
-      // Wider horizontal scatter, flatter vertical — cumulus shape.
-      const ox = (Math.random() - 0.5) * baseSize * 1.3;
-      const oy = (Math.random() - 0.3) * baseSize * 0.3;
-      const oz = (Math.random() - 0.5) * baseSize * 1.3;
-      s.position.set(cx + ox, cy + oy, cz + oz);
-      const puffSize = baseSize * (0.7 + Math.random() * 0.6);
-      s.scale.set(puffSize, puffSize * 0.7, puffSize);
-      scene.add(s);
+      const puff = new THREE.Mesh(cloudGeo, cloudMat);
+      const ox = (Math.random() - 0.5) * baseSize * 3.5;
+      const oy = (Math.random() - 0.3) * baseSize * 0.6;
+      const oz = (Math.random() - 0.5) * baseSize * 3.5;
+      puff.position.set(ccx + ox, ccy + oy, ccz + oz);
+      const s = baseSize * (0.6 + Math.random() * 0.6);
+      puff.scale.set(s, s * 0.55, s); // flattened for cumulus shape
+      scene.add(puff);
     }
   }
 
