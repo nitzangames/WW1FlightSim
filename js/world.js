@@ -199,8 +199,7 @@ export function buildWorld(scene) {
   // Clouds: multi-puff clusters so each cloud has volume, not just a dot.
   // Larger canvas texture with a soft falloff, then 4-6 sprites per cluster
   // at randomised offsets to build a cumulus shape.
-  // Cloud texture: original look with premultiplyAlpha to prevent RGB
-  // fringing on some mobile GPUs.
+  // Clouds: multi-puff clusters. Soft radial gradient on a 256×256 canvas.
   const cloudCanvas = document.createElement('canvas');
   cloudCanvas.width = 256; cloudCanvas.height = 256;
   const cctx = cloudCanvas.getContext('2d');
@@ -210,7 +209,6 @@ export function buildWorld(scene) {
   cgrad.addColorStop(1, 'rgba(255,255,255,0)');
   cctx.fillStyle = cgrad; cctx.fillRect(0, 0, 256, 256);
   const cloudTex = new THREE.CanvasTexture(cloudCanvas);
-  cloudTex.premultiplyAlpha = true;
   const cloudMat = new THREE.SpriteMaterial({ map: cloudTex, transparent: true, fog: true, depthWrite: false });
 
   const CLOUD_CLUSTERS = 18;
