@@ -26,10 +26,14 @@ function smoothstep(a, b, x) {
 }
 
 // Sample a terrain height at world-space (x, z). Exported so future code can place things on the surface.
-// Natural terrain height at the airfield center (no flattening). Precomputed
-// so the flat zone sits at the same elevation as the surrounding landscape.
+// The terrain mesh is a PlaneGeometry rotated -90° on X: its local Y becomes
+// world -Z. So terrainHeight(x, z) receives z = -worldZ. The airfield lives at
+// worldZ = AIRFIELD_Z, which means terrain-space z = -AIRFIELD_Z.
+const _afTerrainZ = -WORLD.AIRFIELD_Z;
+
+// Natural terrain height at the airfield center (precomputed for level blending).
 const _afCenterH = (function () {
-  const ax = WORLD.AIRFIELD_X, az = WORLD.AIRFIELD_Z;
+  const ax = WORLD.AIRFIELD_X, az = _afTerrainZ;
   return smoothNoise(ax * 0.0015, az * 0.0015) * 55 +
          smoothNoise(ax * 0.005, az * 0.005) * 22 +
          smoothNoise(ax * 0.02, az * 0.02) * 5;
@@ -41,7 +45,7 @@ export function terrainHeight(x, z) {
   // Flatten the airfield zone to the natural terrain level at its center
   // (not to 0, which would create a pit). Smoothly blend to normal terrain.
   const afx = Math.abs(x - WORLD.AIRFIELD_X);
-  const afz = Math.abs(z - WORLD.AIRFIELD_Z);
+  const afz = Math.abs(z - _afTerrainZ); // z is -worldZ in terrain coords
   const airfieldBlend = smoothstep(25, 60, afx) * smoothstep(120, 180, afz);
 
   // Base rolling hills, more pronounced than before.
