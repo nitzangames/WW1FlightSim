@@ -157,36 +157,6 @@ export function buildWorld(scene) {
   ground.position.y = WORLD.GROUND_Y;
   scene.add(ground);
 
-  // Trench line: zig-zag along z=0±30m, x from -2500 to 2500
-  const trenchSegmentCount = 30;
-  const trenchBoxGeo = new THREE.BoxGeometry(80, 3, 12);
-  const trenchMat = new THREE.MeshLambertMaterial({ color: 0x3d2817 });
-
-  for (let i = 0; i < trenchSegmentCount; i++) {
-    const progress = i / trenchSegmentCount;
-    const x = -2500 + progress * 5000;
-    const zOffset = (i % 2 === 0) ? 15 : -15;
-    const surfaceHeight = terrainHeight(x, zOffset);
-    const y = WORLD.GROUND_Y + surfaceHeight - 1; // Sunken slightly
-
-    const trenchBox = new THREE.Mesh(trenchBoxGeo, trenchMat);
-    trenchBox.position.set(x, y, zOffset);
-    scene.add(trenchBox);
-  }
-
-  // Add small crater discs near the trench
-  const craterGeo = new THREE.CylinderGeometry(25, 25, 1, 8);
-  const craterMat = new THREE.MeshLambertMaterial({ color: 0x3d2817 });
-  for (let i = 0; i < 8; i++) {
-    const x = -2000 + Math.random() * 4000;
-    const z = -80 + Math.random() * 160;
-    const surfaceHeight = terrainHeight(x, z);
-    const y = WORLD.GROUND_Y + surfaceHeight;
-    const crater = new THREE.Mesh(craterGeo, craterMat);
-    crater.position.set(x, y, z);
-    scene.add(crater);
-  }
-
   // Forest clumps: shared cone geometry and materials
   const treeGeo = new THREE.ConeGeometry(3, 8, 6);
   const treeMat1 = new THREE.MeshLambertMaterial({ color: 0x2d5028 });
@@ -198,14 +168,10 @@ export function buildWorld(scene) {
   const mapRadius = 1700; // keep forests in the lowland plain, below the mountain ring
 
   for (let c = 0; c < clusterCount; c++) {
-    // Pick cluster center (avoid trench corridor z: -50 to +50)
-    let centerX, centerZ;
-    do {
-      const angle = Math.random() * Math.PI * 2;
-      const r = Math.sqrt(Math.random()) * mapRadius;
-      centerX = Math.cos(angle) * r;
-      centerZ = Math.sin(angle) * r;
-    } while (centerZ > -50 && centerZ < 50); // Avoid trench
+    const angle = Math.random() * Math.PI * 2;
+    const r = Math.sqrt(Math.random()) * mapRadius;
+    const centerX = Math.cos(angle) * r;
+    const centerZ = Math.sin(angle) * r;
 
     // Place trees within cluster
     for (let t = 0; t < treesPerCluster; t++) {
