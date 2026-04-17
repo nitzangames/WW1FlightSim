@@ -27,7 +27,7 @@ export const ENEMY = {
 export const GUN = {
   RPM: 600,
   DAMAGE_PER_ROUND: 2,
-  CONE_DEG: 15,
+  CONE_DEG: 8,     // tighter lock — requires more precise aim
   RANGE: 400,
 };
 
