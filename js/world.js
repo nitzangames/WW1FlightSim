@@ -26,11 +26,20 @@ function smoothstep(a, b, x) {
 }
 
 // Sample a terrain height at world-space (x, z). Exported so future code can place things on the surface.
+// Natural terrain height at the airfield center (no flattening). Precomputed
+// so the flat zone sits at the same elevation as the surrounding landscape.
+const _afCenterH = (function () {
+  const ax = WORLD.AIRFIELD_X, az = WORLD.AIRFIELD_Z;
+  return smoothNoise(ax * 0.0015, az * 0.0015) * 55 +
+         smoothNoise(ax * 0.005, az * 0.005) * 22 +
+         smoothNoise(ax * 0.02, az * 0.02) * 5;
+})();
+
 export function terrainHeight(x, z) {
   const r = Math.hypot(x, z);
 
-  // Flatten the airfield zone. The runway is ~220m along Z and ~80m wide.
-  // Smoothly blend back to normal terrain outside that area.
+  // Flatten the airfield zone to the natural terrain level at its center
+  // (not to 0, which would create a pit). Smoothly blend to normal terrain.
   const afx = Math.abs(x - WORLD.AIRFIELD_X);
   const afz = Math.abs(z - WORLD.AIRFIELD_Z);
   const airfieldBlend = smoothstep(25, 60, afx) * smoothstep(120, 180, afz);
@@ -47,7 +56,10 @@ export function terrainHeight(x, z) {
     smoothstep(1600, 3200, r) *
     (smoothNoise(x * 0.004, z * 0.004) * 120 +
      smoothNoise(x * 0.012, z * 0.012) * 45);
-  return (hills + edgeBoost + mountainNoise) * airfieldBlend;
+  const naturalHeight = hills + edgeBoost + mountainNoise;
+  // Blend: at airfield center (blend=0) → flat at AF_CENTER_HEIGHT;
+  // at edges (blend=1) → normal naturalHeight.
+  return _afCenterH + (naturalHeight - _afCenterH) * airfieldBlend;
 }
 
 export function buildWorld(scene) {

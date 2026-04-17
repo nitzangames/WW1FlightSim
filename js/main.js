@@ -39,9 +39,10 @@ planeMesh.visible = false; // hidden from cockpit — we're inside it
 planeMesh.rotation.order = 'YXZ';
 scene.add(planeMesh);
 
-// Airfield — off to one side of the map, not the center.
+// Airfield — off to one side of the map. Position at terrain height.
 const airfield = buildAirfield();
-airfield.position.set(WORLD.AIRFIELD_X, WORLD.GROUND_Y, WORLD.AIRFIELD_Z);
+const airfieldY = WORLD.GROUND_Y + terrainHeight(WORLD.AIRFIELD_X, WORLD.AIRFIELD_Z);
+airfield.position.set(WORLD.AIRFIELD_X, airfieldY, WORLD.AIRFIELD_Z);
 scene.add(airfield);
 
 // Menu display Fokker — slowly rotates in front of the camera during MENU state.
@@ -669,7 +670,7 @@ function loop(t) {
     menuFokker.visible = true;
     menuFokkerAngle += dt * 0.15;
     const mfX = WORLD.AIRFIELD_X, mfZ = WORLD.AIRFIELD_Z;
-    const mfY = WORLD.GROUND_Y + 3;
+    const mfY = airfieldY + 3;
     menuFokker.position.set(mfX, mfY, mfZ);
     menuFokker.rotation.y = Math.PI;
     menuFokker.rotation.x = 0;
