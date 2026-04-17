@@ -16,6 +16,7 @@ import { GameState, STATE, saveSettings } from './game.js';
 import { initAudio, startWind, stopWind, playFlyby, playExplosion, playDeathWhine, playGunBurst, playHit, playKill } from './audio.js';
 import { mpAvailable, mpOpenLobby, mpIsHost, mpRoom, mpSend, mpInit, mpLeave,
          mpSetMessageHandler, mpSetDisconnectHandler, mpGetRemotes, mpInterpolateRemote } from './multiplayer.js';
+import { submitScore, fetchAroundMe, refreshMenuData, leaderboardCache } from './leaderboard.js';
 
 const gameCanvas = document.getElementById('game-canvas');
 const overlayCanvas = document.getElementById('overlay-canvas');
@@ -147,6 +148,7 @@ overlayCanvas.addEventListener('pointerdown', (e) => {
     gs.state = STATE.MENU;
     if (mpMode) mpLeave();
     mpMode = false;
+    refreshMenuData();
     return;
   }
 
@@ -623,6 +625,14 @@ function loop(t) {
       const gy = WORLD.GROUND_Y + terrainHeight(plane.position.x, plane.position.z);
       placeScorch(scorchPool, plane.position.x, gy, plane.position.z, 1.4);
       gs.die();
+      // Submit score to the appropriate leaderboard.
+      const board = mpMode ? 'coop' : 'solo';
+      submitScore(board, gs.kills, {
+        rank: gs.rank,
+        planes: gs.planeKills,
+        balloons: gs.balloonKills,
+        zeppelins: gs.zeppelinKills,
+      }).then(() => fetchAroundMe(board, 3));
     }
     // Multiplayer: send snapshots + sync.
     if (mpMode) {
@@ -719,6 +729,7 @@ function loop(t) {
     settingsOpen: gs.settingsOpen,
     settings: gs.settings,
     mpAvailable: mpAvailable(),
+    leaderboard: leaderboardCache,
     joystick: { active: joystick.active, ax: joystick.ax, ay: joystick.ay, x: joystick.x, y: joystick.y, radius: joystick.radius },
     player: plane,
     enemies,

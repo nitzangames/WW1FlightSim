@@ -334,7 +334,30 @@ export function drawHud(ctx, state) {
     ctx.fillStyle = '#ffffff88';
     ctx.font = '28px sans-serif';
     ctx.fillText(`BEST ${state.best}`, mx, y);
-    y += 80;
+    y += 50;
+
+    // Leaderboard rank from last submission.
+    const lb = state.leaderboard;
+    if (lb && lb.lastSubmit && lb.lastSubmit.rank) {
+      ctx.fillStyle = '#ffd65a';
+      ctx.font = 'bold 34px sans-serif';
+      ctx.fillText(`RANK #${lb.lastSubmit.rank} of ${lb.lastSubmit.total}`, mx, y);
+      y += 44;
+
+      // Nearby entries.
+      const board = lb.lastSubmit.board;
+      const entries = lb[board] ? lb[board].entries : [];
+      if (entries.length > 0) {
+        ctx.font = '22px sans-serif';
+        for (const e of entries) {
+          ctx.fillStyle = e.isMe ? '#ffd65a' : '#ffffffaa';
+          const name = (e.metadata && e.metadata.name) || 'Pilot';
+          ctx.fillText(`#${e.rank} ${name} — ${e.value} kills`, mx, y);
+          y += 28;
+        }
+      }
+    }
+    y += 30;
 
     ctx.fillStyle = '#ffffffcc';
     ctx.font = '30px sans-serif';
@@ -412,10 +435,27 @@ export function drawHud(ctx, state) {
     ctx.fillText('CO-OP', mx, mpY + 64);
     drawHud._mpBtn = { x: mx - btnW / 2, y: mpY, w: btnW, h: btnH };
 
-    // Best score.
+    // Best score + leaderboard ranks.
     ctx.fillStyle = '#5a4a2a';
-    ctx.font = '30px serif';
-    ctx.fillText(`BEST: ${state.best}`, mx, mpY + btnH + 60);
+    ctx.font = '26px serif';
+    let infoY = mpY + btnH + 50;
+    ctx.fillText(`BEST: ${state.best}`, mx, infoY);
+    infoY += 36;
+
+    const lb = state.leaderboard;
+    if (lb) {
+      ctx.font = '22px sans-serif';
+      if (lb.solo.rank) {
+        ctx.fillStyle = '#5a4a2a';
+        ctx.fillText(`Solo: ${lb.solo.best} kills — Rank #${lb.solo.rank}/${lb.solo.total}`, mx, infoY);
+        infoY += 30;
+      }
+      if (lb.coop.rank) {
+        ctx.fillStyle = '#5a4a2a';
+        ctx.fillText(`Co-op: ${lb.coop.best} kills — Rank #${lb.coop.rank}/${lb.coop.total}`, mx, infoY);
+        infoY += 30;
+      }
+    }
   }
 
   // Pause button — small icon top-left (below kills/ammo) during play.
