@@ -37,7 +37,9 @@ export class Spawner {
       const alt = (Math.random() * 2 - 1) * SPAWN.SPAWN_ALT_JITTER;
       const x = Math.sin(bearing) * dist;
       const z = Math.cos(bearing) * dist;
-      const y = player.position.y + alt;
+      // Ensure enemies spawn well above the ground, not near the player's
+      // takeoff altitude.
+      const y = Math.max(SPAWN.SPAWN_MIN_ALT || 150, player.position.y) + alt;
       const mode = Math.random() < 0.6 ? 'chaser' : 'jouster';
       // Variant ramp: default khaki always; olive 'b' unlocks at 5 kills; gold
       // 'ace' is a rare (1-in-6) treat after 10 kills.

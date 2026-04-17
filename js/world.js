@@ -26,27 +26,28 @@ function smoothstep(a, b, x) {
 }
 
 // Sample a terrain height at world-space (x, z). Exported so future code can place things on the surface.
-// The terrain mesh is a PlaneGeometry rotated -90° on X: its local Y becomes
-// world -Z. So terrainHeight(x, z) receives z = -worldZ. The airfield lives at
-// worldZ = AIRFIELD_Z, which means terrain-space z = -AIRFIELD_Z.
-const _afTerrainZ = -WORLD.AIRFIELD_Z;
+// The terrain mesh is a PlaneGeometry rotated -90° on X, so its local Y maps
+// to -worldZ. terrainHeight now accepts WORLD coordinates and negates Z
+// internally so every caller can pass world coords directly.
+const _afTX = WORLD.AIRFIELD_X;
+const _afTZ = -WORLD.AIRFIELD_Z; // terrain-local Z
 
-// Natural terrain height at the airfield center (precomputed for level blending).
 const _afCenterH = (function () {
-  const ax = WORLD.AIRFIELD_X, az = _afTerrainZ;
-  return smoothNoise(ax * 0.0015, az * 0.0015) * 55 +
-         smoothNoise(ax * 0.005, az * 0.005) * 22 +
-         smoothNoise(ax * 0.02, az * 0.02) * 5;
+  return smoothNoise(_afTX * 0.0015, _afTZ * 0.0015) * 55 +
+         smoothNoise(_afTX * 0.005, _afTZ * 0.005) * 22 +
+         smoothNoise(_afTX * 0.02, _afTZ * 0.02) * 5;
 })();
 
-export function terrainHeight(x, z) {
+export function terrainHeight(worldX, worldZ) {
+  // Negate Z to convert from world to terrain-local coordinates.
+  const x = worldX, z = -worldZ;
   const r = Math.hypot(x, z);
 
   // Flatten the airfield zone using a CIRCULAR blend so it doesn't create
   // cross-shaped strips that cut into the mountains. The flat zone covers
   // a 130m radius (enough for the 220m runway), blending to normal terrain
   // by 240m out.
-  const afDist = Math.hypot(x - WORLD.AIRFIELD_X, z - _afTerrainZ);
+  const afDist = Math.hypot(x - _afTX, z - _afTZ);
   const airfieldBlend = smoothstep(130, 240, afDist);
 
   // Base rolling hills, more pronounced than before.
@@ -104,8 +105,10 @@ export function buildWorld(scene) {
     const pos = groundGeo.attributes.position;
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
-      const y = pos.getY(i); // PlaneGeometry is in XY; becomes XZ after rotation.
-      pos.setZ(i, terrainHeight(x, y));
+      const y = pos.getY(i); // PlaneGeometry local Y = -worldZ.
+      // terrainHeight expects world coords and negates Z internally,
+      // so pass -y to convert local Y back to worldZ.
+      pos.setZ(i, terrainHeight(x, -y));
     }
     pos.needsUpdate = true;
   }
@@ -196,17 +199,15 @@ export function buildWorld(scene) {
   // Clouds: multi-puff clusters so each cloud has volume, not just a dot.
   // Larger canvas texture with a soft falloff, then 4-6 sprites per cluster
   // at randomised offsets to build a cumulus shape.
-  // Cloud texture: premultiplied alpha to avoid RGB fringing on mobile GPUs.
-  // Edge pixels have RGB=0 so any alpha leak is invisible.
+  // Cloud texture: original look with premultiplyAlpha to prevent RGB
+  // fringing on some mobile GPUs.
   const cloudCanvas = document.createElement('canvas');
   cloudCanvas.width = 256; cloudCanvas.height = 256;
   const cctx = cloudCanvas.getContext('2d');
-  // Start with fully transparent black canvas (default), then draw the
-  // gradient so the colour only exists where alpha > 0.
-  const cgrad = cctx.createRadialGradient(128, 128, 10, 128, 128, 120);
-  cgrad.addColorStop(0, 'rgba(255,255,255,0.88)');
-  cgrad.addColorStop(0.6, 'rgba(240,240,240,0.4)');
-  cgrad.addColorStop(1, 'rgba(0,0,0,0)');
+  const cgrad = cctx.createRadialGradient(128, 128, 20, 128, 128, 128);
+  cgrad.addColorStop(0, 'rgba(255,255,255,0.92)');
+  cgrad.addColorStop(0.5, 'rgba(255,255,255,0.55)');
+  cgrad.addColorStop(1, 'rgba(255,255,255,0)');
   cctx.fillStyle = cgrad; cctx.fillRect(0, 0, 256, 256);
   const cloudTex = new THREE.CanvasTexture(cloudCanvas);
   cloudTex.premultiplyAlpha = true;

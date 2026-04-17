@@ -47,8 +47,9 @@ export const SPAWN = {
   CAP_COUNT: 4,
   KILLS_PER_RAMP: 5,
   // Enemies spawn on the far side of the playable map from the player.
-  SPAWN_EDGE_MIN: 700,   // meters from world origin — close enough to read on screen
-  SPAWN_EDGE_MAX: 1100,
-  SPAWN_BEARING_SPREAD: Math.PI / 2.5, // random arc around "opposite" direction (~72°)
-  SPAWN_ALT_JITTER: 60,
+  SPAWN_EDGE_MIN: 1000,  // meters from world origin
+  SPAWN_EDGE_MAX: 1400,
+  SPAWN_BEARING_SPREAD: Math.PI / 2.5,
+  SPAWN_ALT_JITTER: 40,
+  SPAWN_MIN_ALT: 180,    // minimum world-Y so enemies are well above the ground
 };

@@ -41,8 +41,7 @@ scene.add(planeMesh);
 
 // Airfield — off to one side of the map. Position at terrain height.
 const airfield = buildAirfield();
-// terrainHeight receives terrain-space z = -worldZ (due to the rotated PlaneGeometry).
-const airfieldY = WORLD.GROUND_Y + terrainHeight(WORLD.AIRFIELD_X, -WORLD.AIRFIELD_Z);
+const airfieldY = WORLD.GROUND_Y + terrainHeight(WORLD.AIRFIELD_X, WORLD.AIRFIELD_Z);
 airfield.position.set(WORLD.AIRFIELD_X, airfieldY, WORLD.AIRFIELD_Z);
 scene.add(airfield);
 
@@ -168,7 +167,7 @@ function resetGameObjects() {
   enemies.length = 0;
   // Start on the runway: near the end of the strip, facing down the runway (-Z).
   const rsx = WORLD.AIRFIELD_X, rsz = WORLD.AIRFIELD_Z + 90;
-  const runwayY = WORLD.GROUND_Y + terrainHeight(rsx, -rsz) + 1.5;
+  const runwayY = WORLD.GROUND_Y + terrainHeight(rsx, rsz) + 1.5;
   plane.position.x = rsx; plane.position.y = runwayY; plane.position.z = rsz;
   plane.pitch = 0; plane.roll = 0; plane.yaw = 0;
   plane.hp = PLAYER.HP; plane.alive = true; plane.damageFlash = 0;
