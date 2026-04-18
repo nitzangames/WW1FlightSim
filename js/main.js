@@ -726,11 +726,18 @@ function loop(t) {
       const abDist = Math.hypot(plane.position.x - WORLD.AIRFIELD_X, plane.position.z - WORLD.AIRFIELD_Z);
       if (abDist < 80) gs.mission.onReturnBase();
       // Check win.
-      if (gs.mission.checkWin()) {
+      if (gs.mission.checkWin() && !gs.mission.won) {
         gs.mission.active = false;
         gs.mission.won = true;
+        gs.mission.winTimer = 1.0; // 1s delay before showing the screen
         MissionState.markCompleted(gs.mission.def.id);
-        gs.state = STATE.MISSION_WIN;
+      }
+      if (gs.mission.won && gs.mission.winTimer !== undefined) {
+        gs.mission.winTimer -= dt;
+        if (gs.mission.winTimer <= 0) {
+          gs.mission.winTimer = undefined;
+          gs.state = STATE.MISSION_WIN;
+        }
       }
     }
 

@@ -652,14 +652,14 @@ export function drawHud(ctx, state) {
   // Mission objectives overlay (top-right below minimap during play)
   if (state.mission && !state.menu && !state.paused && !state.gameOver && !state.missionWin) {
     const objStrs = state.mission.getObjectiveStrings();
-    ctx.font = 'bold 22px sans-serif';
+    ctx.font = 'bold 44px sans-serif';
     ctx.textAlign = 'right';
-    let oy = 400;
+    let oy = 420;
     for (const s of objStrs) {
       ctx.fillStyle = s.includes('DESTROYED') || s.includes('DONE') || s.includes('DEFEATED') || s.includes('ARRIVED')
         ? '#80ff80' : '#ffffffcc';
       ctx.fillText(s, CANVAS_W - 30, oy);
-      oy += 28;
+      oy += 54;
     }
   }
 
