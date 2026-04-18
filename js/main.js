@@ -729,15 +729,17 @@ function loop(t) {
       if (gs.mission.checkWin() && !gs.mission.won) {
         gs.mission.active = false;
         gs.mission.won = true;
-        gs.mission.winTimer = 1.0; // 1s delay before showing the screen
+        gs.mission.winTimer = 1.0;
         MissionState.markCompleted(gs.mission.def.id);
       }
-      if (gs.mission.won && gs.mission.winTimer !== undefined) {
-        gs.mission.winTimer -= dt;
-        if (gs.mission.winTimer <= 0) {
-          gs.mission.winTimer = undefined;
-          gs.state = STATE.MISSION_WIN;
-        }
+    }
+    // Win timer runs OUTSIDE the active guard — active is false by the
+    // time we need to count down.
+    if (gs.mission && gs.mission.won && gs.mission.winTimer !== undefined) {
+      gs.mission.winTimer -= dt;
+      if (gs.mission.winTimer <= 0) {
+        gs.mission.winTimer = undefined;
+        gs.state = STATE.MISSION_WIN;
       }
     }
 
@@ -784,9 +786,9 @@ function loop(t) {
     menuFokker.visible = false;
   }
 
-  // Screen shake — offset camera briefly when taking damage.
+  // Screen shake — only during gameplay, not on menu/gameover.
   let shakeX = 0, shakeY = 0, shakeZ = 0;
-  if (plane.damageFlash > 0.08) {
+  if (plane.damageFlash > 0.08 && (isPlaying || isTakeoff)) {
     const amp = plane.damageFlash * 1.8;
     shakeX = (Math.random() - 0.5) * amp;
     shakeY = (Math.random() - 0.5) * amp;
