@@ -3,7 +3,7 @@ import { createRenderer } from './renderer.js';
 import { buildWorld } from './world.js';
 import { Joystick } from './input.js';
 import { Plane } from './plane.js';
-import { buildFokker, buildCockpit, buildAirfield, createSmokePool, emitSmoke, updateSmoke, createScorchPool, placeScorch, createFirePool, emitFire, updateFire } from './models.js';
+import { buildFokker, buildCockpit, buildAirfield, buildZeppelin as buildZepMesh, createSmokePool, emitSmoke, updateSmoke, createScorchPool, placeScorch, createFirePool, emitFire, updateFire } from './models.js';
 import { terrainHeight } from './world.js';
 import { drawHud } from './hud.js';
 import { Spawner } from './enemy-spawner.js';
@@ -165,6 +165,27 @@ overlayCanvas.addEventListener('pointerdown', (e) => {
           gs.mission._ringMeshes.push(ring);
         }
       }
+      // Spawn escort zeppelin (friendly — not in enemies array).
+      if (gs.missionDef.spawn && gs.missionDef.spawn.escortZeppelin) {
+        const zepMesh = buildZepMesh();
+        // Tint it blue-ish so it reads as friendly.
+        zepMesh.traverse(c => { if (c.material && c.material.color) c.material = c.material.clone(); });
+        zepMesh.traverse(c => { if (c.material && c.material.color) c.material.color.offsetHSL(0.55, 0, 0.05); });
+        zepMesh.rotation.order = 'YXZ';
+        const startX = -800, startZ = -800;
+        const destX = 800, destZ = 800;
+        zepMesh.position.set(startX, 220, startZ);
+        scene.add(zepMesh);
+        gs.mission.escortZep = {
+          mesh: zepMesh,
+          position: { x: startX, y: 220, z: startZ },
+          dest: { x: destX, z: destZ },
+          hp: 200, maxHp: 200,
+          speed: 12,
+          yaw: Math.atan2(-(destX - startX), -(destZ - startZ)),
+          alive: true,
+        };
+      }
       // Spawn mission-specific enemies.
       if (gs.missionDef.spawn && gs.missionDef.spawn.ace) {
         const a = Math.random() * Math.PI * 2;
@@ -264,10 +285,13 @@ overlayCanvas.addEventListener('pointerup', () => joystick.up());
 overlayCanvas.addEventListener('pointercancel', () => joystick.up());
 
 function resetGameObjects() {
-  // Clean up checkpoint rings from any previous mission.
+  // Clean up checkpoint rings + escort zeppelin from any previous mission.
   if (gs.mission && gs.mission._ringMeshes) {
     for (const m of gs.mission._ringMeshes) scene.remove(m);
     gs.mission._ringMeshes = [];
+  }
+  if (gs.mission && gs.mission.escortZep && gs.mission.escortZep.mesh) {
+    scene.remove(gs.mission.escortZep.mesh);
   }
   for (const e of enemies) scene.remove(e.mesh);
   enemies.length = 0;
@@ -545,7 +569,13 @@ function loop(t) {
       plane.yaw += weather.update(dt);
     }
     syncCameraToPlane();
-    for (const e of enemies) e.update(dt, plane);
+    // Set escort target on enemies during escort missions.
+    const escortPos = (gs.mission && gs.mission.escortZep && gs.mission.escortZep.alive)
+      ? gs.mission.escortZep.position : null;
+    for (const e of enemies) {
+      e.escortTarget = escortPos;
+      e.update(dt, plane);
+    }
     // Spawn enemy tracers for every enemy that just fired. Miss rounds drift off
     // in the same direction so the player sees both hits and near-misses.
     const spread = ENEMY.TRACER_SPREAD_DEG * Math.PI / 180;
@@ -778,6 +808,40 @@ function loop(t) {
     // Mission objective tracking: update timer + check win condition.
     if (gs.mission && gs.mission.active) {
       gs.mission.update(dt);
+      // Update escort zeppelin: move toward destination, check arrival/death.
+      const ez = gs.mission.escortZep;
+      if (ez && ez.alive) {
+        // Move toward destination.
+        const edx = ez.dest.x - ez.position.x;
+        const edz = ez.dest.z - ez.position.z;
+        const eDist = Math.hypot(edx, edz);
+        if (eDist < 50) {
+          gs.mission.escortArrived = true;
+        } else {
+          const enx = edx / eDist, enz = edz / eDist;
+          ez.position.x += enx * ez.speed * dt;
+          ez.position.z += enz * ez.speed * dt;
+          ez.yaw = Math.atan2(-enx, -enz);
+        }
+        ez.mesh.position.set(ez.position.x, ez.position.y, ez.position.z);
+        ez.mesh.rotation.y = ez.yaw + Math.PI;
+        // Enemies damage the zeppelin if close + facing it.
+        for (const e of enemies) {
+          if (!e.alive || e.dying || e.type !== 'plane') continue;
+          const dx = ez.position.x - e.position.x;
+          const dz = ez.position.z - e.position.z;
+          const d = Math.hypot(dx, ez.position.y - e.position.y, dz);
+          if (d < 80) {
+            ez.hp -= 3 * dt; // steady damage when enemies are near
+          }
+        }
+        if (ez.hp <= 0) {
+          ez.alive = false;
+          ez.mesh.visible = false;
+          gs.mission.failed = true;
+          gs.die(); // mission failed = game over
+        }
+      }
       // Check return-to-base (within 80m of airfield).
       const abDist = Math.hypot(plane.position.x - WORLD.AIRFIELD_X, plane.position.z - WORLD.AIRFIELD_Z);
       if (abDist < 80) gs.mission.onReturnBase();
@@ -908,6 +972,7 @@ function loop(t) {
     pickups: healthPickups.filter(hp => hp.active).map(hp => hp.position),
     checkpoints: gs.mission ? gs.mission.checkpoints : null,
     nextCheckpoint: gs.mission ? gs.mission.nextCheckpoint : 0,
+    escortZep: gs.mission ? gs.mission.escortZep : null,
     ammo: gs.ammo,
     maxAmmo: gs.maxAmmo,
     reloading: gs.reloading,

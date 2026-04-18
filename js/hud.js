@@ -290,6 +290,7 @@ export function drawHud(ctx, state) {
       pickups: state.pickups,
       checkpoints: state.checkpoints,
       nextCheckpoint: state.nextCheckpoint,
+      escortZep: state.escortZep,
     });
 
     const d = Math.hypot(state.player.position.x, state.player.position.z);

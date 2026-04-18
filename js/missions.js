@@ -180,7 +180,16 @@ export class MissionState {
         }
         case 'survive_waves': return `Waves: ${val}/${obj.target}`;
         case 'checkpoints': return `Checkpoints: ${val}/${obj.target}`;
-        case 'escort': return `Escort: ${this.escortArrived ? 'ARRIVED' : 'in progress'}`;
+        case 'escort': {
+          if (this.escortArrived) return 'Escort: ARRIVED';
+          const ez = this.escortZep;
+          if (ez && ez.alive) {
+            const pct = Math.round((ez.hp / ez.maxHp) * 100);
+            const d = Math.round(Math.hypot(ez.dest.x - ez.position.x, ez.dest.z - ez.position.z));
+            return `Escort HP: ${pct}% — ${d}m`;
+          }
+          return 'Escort: DESTROYED';
+        }
         case 'return_base': return `Return to base: ${val ? 'DONE' : 'pending'}`;
         default: return '';
       }

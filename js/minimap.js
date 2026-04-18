@@ -21,7 +21,7 @@ export function worldToRadar(player, enemy, radius, range) {
   return { x, y };
 }
 
-export function drawMinimap(ctx, player, enemies, { cx, cy, radius, allies, pickups, checkpoints, nextCheckpoint }) {
+export function drawMinimap(ctx, player, enemies, { cx, cy, radius, allies, pickups, checkpoints, nextCheckpoint, escortZep }) {
   ctx.save();
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -88,6 +88,23 @@ export function drawMinimap(ctx, player, enemies, { cx, cy, radius, allies, pick
       ctx.fillRect(-sz, -sz, sz * 2, sz * 2);
       ctx.restore();
     }
+  }
+
+  // Escort zeppelin — large blue circle + destination marker.
+  if (escortZep && escortZep.alive) {
+    const ep = worldToRadar(player, escortZep.position, radius, 2000);
+    ctx.fillStyle = '#4a8aff';
+    ctx.beginPath(); ctx.arc(cx + ep.x, cy + ep.y, 10, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#4a8aff'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx + ep.x, cy + ep.y, 14, 0, Math.PI * 2); ctx.stroke();
+    // Destination marker
+    const dp = worldToRadar(player, { x: escortZep.dest.x, z: escortZep.dest.z }, radius, 2000);
+    ctx.strokeStyle = '#4aff4a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx + dp.x - 8, cy + dp.y); ctx.lineTo(cx + dp.x + 8, cy + dp.y);
+    ctx.moveTo(cx + dp.x, cy + dp.y - 8); ctx.lineTo(cx + dp.x, cy + dp.y + 8);
+    ctx.stroke();
   }
 
   // Health pickups — green crosses on the radar.

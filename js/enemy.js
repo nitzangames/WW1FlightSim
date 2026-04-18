@@ -120,7 +120,13 @@ export class Enemy {
     }
 
     // Compute desired heading — smoothed to prevent snapping on mode switches.
-    const rawTarget = this.dodging ? this.computeDodgePoint(player) : this.computeTargetPoint(player);
+    // In escort missions, 70% of enemies target the zeppelin instead of the player.
+    let rawTarget;
+    if (this.escortTarget && !this.dodging && (this._escortBias === undefined ? (this._escortBias = Math.random() < 0.7) : this._escortBias)) {
+      rawTarget = { ...this.escortTarget };
+    } else {
+      rawTarget = this.dodging ? this.computeDodgePoint(player) : this.computeTargetPoint(player);
+    }
     if (!this._smoothTarget) this._smoothTarget = { ...rawTarget };
     const tLerp = Math.min(1, 5.0 * dt);
     this._smoothTarget.x += (rawTarget.x - this._smoothTarget.x) * tLerp;
