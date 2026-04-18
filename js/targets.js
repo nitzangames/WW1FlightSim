@@ -88,8 +88,8 @@ export class Zeppelin {
     this.pitch = 0;
     this.roll = 0;
     this.forward = { x: -Math.sin(this.yaw), y: 0, z: -Math.cos(this.yaw) };
-    this.hp = 250;
-    this.maxHp = 250;
+    this.hp = 350;
+    this.maxHp = 350;
     this.speed = 6; // very slow patrol
     this.alive = true;
     this.dying = false;

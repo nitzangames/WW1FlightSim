@@ -21,7 +21,7 @@ export function worldToRadar(player, enemy, radius, range) {
   return { x, y };
 }
 
-export function drawMinimap(ctx, player, enemies, { cx, cy, radius, allies, pickups }) {
+export function drawMinimap(ctx, player, enemies, { cx, cy, radius, allies, pickups, checkpoints, nextCheckpoint }) {
   ctx.save();
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -69,6 +69,23 @@ export function drawMinimap(ctx, player, enemies, { cx, cy, radius, allies, pick
       ctx.lineTo(5, 5);
       ctx.closePath();
       ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // Checkpoints — cyan diamonds, next one brighter.
+  if (checkpoints) {
+    for (let i = 0; i < checkpoints.length; i++) {
+      const cp = checkpoints[i];
+      if (cp.passed) continue;
+      const pp = worldToRadar(player, cp, radius, 2000);
+      const isNext = i === (nextCheckpoint || 0);
+      ctx.fillStyle = isNext ? '#40ffee' : '#40ffee55';
+      ctx.save();
+      ctx.translate(cx + pp.x, cy + pp.y);
+      ctx.rotate(Math.PI / 4);
+      const sz = isNext ? 8 : 5;
+      ctx.fillRect(-sz, -sz, sz * 2, sz * 2);
       ctx.restore();
     }
   }

@@ -136,6 +136,35 @@ overlayCanvas.addEventListener('pointerdown', (e) => {
       mpMode = false;
       gs.mission = new MissionState(gs.missionDef);
       resetGameObjects();
+      // Generate checkpoint rings for patrol missions.
+      if (gs.missionDef.objectives.some(o => o.type === 'checkpoints')) {
+        const count = gs.missionDef.objectives.find(o => o.type === 'checkpoints').target;
+        const ringGeo = new THREE.TorusGeometry(18, 1.5, 8, 24);
+        const ringMatActive = new THREE.MeshBasicMaterial({ color: 0x40ff60, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+        const ringMatFuture = new THREE.MeshBasicMaterial({ color: 0x40ff60, transparent: true, opacity: 0.25, side: THREE.DoubleSide });
+        const ringMatDone = new THREE.MeshBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.15, side: THREE.DoubleSide });
+        gs.mission.checkpoints = [];
+        gs.mission._ringMeshes = [];
+        gs.mission._ringMats = { active: ringMatActive, future: ringMatFuture, done: ringMatDone };
+        for (let i = 0; i < count; i++) {
+          const a = (i / count) * Math.PI * 2 + 0.3;
+          const r = 400 + Math.random() * 500;
+          const cp = {
+            x: Math.sin(a) * r,
+            y: 120 + Math.random() * 120,
+            z: Math.cos(a) * r,
+            passed: false,
+          };
+          gs.mission.checkpoints.push(cp);
+          const ring = new THREE.Mesh(ringGeo, i === 0 ? ringMatActive : ringMatFuture);
+          ring.position.set(cp.x, cp.y, cp.z);
+          // Tilt ring to face roughly toward the next checkpoint.
+          const nextA = ((i + 1) / count) * Math.PI * 2 + 0.3;
+          ring.lookAt(Math.sin(nextA) * r, cp.y, Math.cos(nextA) * r);
+          scene.add(ring);
+          gs.mission._ringMeshes.push(ring);
+        }
+      }
       // Spawn mission-specific enemies.
       if (gs.missionDef.spawn && gs.missionDef.spawn.ace) {
         const a = Math.random() * Math.PI * 2;
@@ -745,6 +774,23 @@ function loop(t) {
       // Check return-to-base (within 80m of airfield).
       const abDist = Math.hypot(plane.position.x - WORLD.AIRFIELD_X, plane.position.z - WORLD.AIRFIELD_Z);
       if (abDist < 80) gs.mission.onReturnBase();
+      // Check checkpoint proximity.
+      if (gs.mission.checkpoints && gs.mission.nextCheckpoint < gs.mission.checkpoints.length) {
+        const cp = gs.mission.checkpoints[gs.mission.nextCheckpoint];
+        const cpDist = Math.hypot(plane.position.x - cp.x, plane.position.y - cp.y, plane.position.z - cp.z);
+        if (cpDist < 35) {
+          cp.passed = true;
+          // Update ring visuals.
+          if (gs.mission._ringMeshes) {
+            gs.mission._ringMeshes[gs.mission.nextCheckpoint].material = gs.mission._ringMats.done;
+            if (gs.mission.nextCheckpoint + 1 < gs.mission._ringMeshes.length) {
+              gs.mission._ringMeshes[gs.mission.nextCheckpoint + 1].material = gs.mission._ringMats.active;
+            }
+          }
+          gs.mission.onCheckpoint();
+          playKill(); // satisfying ding
+        }
+      }
       // Check win.
       if (gs.mission.checkWin() && !gs.mission.won) {
         gs.mission.active = false;
@@ -853,6 +899,8 @@ function loop(t) {
     waypoint: gs.state === STATE.PLAYING ? computeWaypoint(enemies, plane, camera) : null,
     allies: mpMode ? Array.from(mpGetRemotes().keys()).map(uid => mpInterpolateRemote(uid)).filter(Boolean) : [],
     pickups: healthPickups.filter(hp => hp.active).map(hp => hp.position),
+    checkpoints: gs.mission ? gs.mission.checkpoints : null,
+    nextCheckpoint: gs.mission ? gs.mission.nextCheckpoint : 0,
     ammo: gs.ammo,
     maxAmmo: gs.maxAmmo,
     reloading: gs.reloading,

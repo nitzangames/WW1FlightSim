@@ -288,6 +288,8 @@ export function drawHud(ctx, state) {
       cx: CANVAS_W - 200, cy: 200, radius: 180,
       allies: state.allies,
       pickups: state.pickups,
+      checkpoints: state.checkpoints,
+      nextCheckpoint: state.nextCheckpoint,
     });
 
     const d = Math.hypot(state.player.position.x, state.player.position.z);
