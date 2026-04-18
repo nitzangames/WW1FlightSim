@@ -172,8 +172,9 @@ overlayCanvas.addEventListener('pointerdown', (e) => {
         zepMesh.traverse(c => { if (c.material && c.material.color) c.material = c.material.clone(); });
         zepMesh.traverse(c => { if (c.material && c.material.color) c.material.color.offsetHSL(0.55, 0, 0.05); });
         zepMesh.rotation.order = 'YXZ';
-        const startX = -800, startZ = -800;
-        const destX = 800, destZ = 800;
+        // Start near the airfield, fly toward the far side of the map.
+        const startX = WORLD.AIRFIELD_X - 100, startZ = WORLD.AIRFIELD_Z - 100;
+        const destX = -WORLD.AIRFIELD_X, destZ = -WORLD.AIRFIELD_Z;
         zepMesh.position.set(startX, 220, startZ);
         scene.add(zepMesh);
         gs.mission.escortZep = {
