@@ -1,4 +1,4 @@
-export const STATE = { MENU: 'menu', TAKEOFF: 'takeoff', PLAYING: 'playing', PAUSED: 'paused', GAMEOVER: 'gameover' };
+export const STATE = { MENU: 'menu', MISSION_SELECT: 'mission_select', BRIEFING: 'briefing', TAKEOFF: 'takeoff', PLAYING: 'playing', PAUSED: 'paused', GAMEOVER: 'gameover', MISSION_WIN: 'mission_win' };
 
 // Persisted settings (localStorage).
 const SETTINGS_KEY = 'ww1.settings';
@@ -36,6 +36,8 @@ export class GameState {
     this.stateBeforePause = null;
     this.settingsOpen = false;
     this.settings = loadSettings();
+    this.mission = null;       // MissionState instance, null for endless mode
+    this.missionDef = null;    // mission definition for briefing display
     this.waveFlash = 0; // countdown timer for wave announcement
     this.ammo = 200;
     this.maxAmmo = 200;

@@ -430,8 +430,19 @@ export function drawHud(ctx, state) {
     ctx.fillText('SOLO FLIGHT', mx, soloY + 64);
     drawHud._soloBtn = { x: mx - btnW / 2, y: soloY, w: btnW, h: btnH };
 
+    // Missions button.
+    const missY = soloY + btnH + 24;
+    ctx.fillStyle = '#8a6a30';
+    ctx.beginPath(); ctx.roundRect(mx - btnW / 2, missY, btnW, btnH, 12); ctx.fill();
+    ctx.fillStyle = '#4a4030';
+    ctx.beginPath(); ctx.roundRect(mx - btnW / 2 + 3, missY + 3, btnW - 6, btnH - 6, 10); ctx.fill();
+    ctx.fillStyle = '#f0e0b0';
+    ctx.font = 'bold 44px serif';
+    ctx.fillText('MISSIONS', mx, missY + 64);
+    drawHud._missionsBtn = { x: mx - btnW / 2, y: missY, w: btnW, h: btnH };
+
     // Multiplayer button.
-    const mpY = soloY + btnH + 30;
+    const mpY = missY + btnH + 24;
     ctx.fillStyle = '#8a6a30';
     ctx.beginPath(); ctx.roundRect(mx - btnW / 2, mpY, btnW, btnH, 12); ctx.fill();
     ctx.fillStyle = state.mpAvailable ? '#3a4a6a' : '#4a3a22';
@@ -636,6 +647,130 @@ export function drawHud(ctx, state) {
     drawHud._invertBtn = null;
     drawHud._senBtns = null;
     drawHud._settingsBackBtn = null;
+  }
+
+  // Mission objectives overlay (top-right below minimap during play)
+  if (state.mission && !state.menu && !state.paused && !state.gameOver && !state.missionWin) {
+    const objStrs = state.mission.getObjectiveStrings();
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'right';
+    let oy = 400;
+    for (const s of objStrs) {
+      ctx.fillStyle = s.includes('DESTROYED') || s.includes('DONE') || s.includes('DEFEATED') || s.includes('ARRIVED')
+        ? '#80ff80' : '#ffffffcc';
+      ctx.fillText(s, CANVAS_W - 30, oy);
+      oy += 28;
+    }
+  }
+
+  // Mission select screen
+  if (state.missionSelect) {
+    ctx.fillStyle = '#000000dd';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    const mx = CANVAS_W / 2;
+    ctx.fillStyle = '#ffd65a';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 72px serif';
+    ctx.fillText('MISSIONS', mx, 120);
+
+    const missions = state.missionList || [];
+    const completed = state.missionsCompleted || [];
+    drawHud._missionBtns = [];
+    const btnW = 700, btnH = 72;
+    let my = 180;
+    for (let i = 0; i < missions.length; i++) {
+      const m = missions[i];
+      const unlocked = state.missionUnlocked ? state.missionUnlocked(m, i) : true;
+      const done = completed.includes(m.id);
+      const stars = '★'.repeat(m.difficulty) + '☆'.repeat(3 - m.difficulty);
+
+      ctx.fillStyle = unlocked ? (done ? '#2a5a2a' : '#3a3a4a') : '#2a2a2a';
+      ctx.beginPath(); ctx.roundRect(mx - btnW / 2, my, btnW, btnH, 10); ctx.fill();
+      ctx.fillStyle = unlocked ? '#ffffffdd' : '#ffffff44';
+      ctx.font = 'bold 28px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(unlocked ? m.name : '🔒 Locked', mx - btnW / 2 + 20, my + 44);
+      ctx.textAlign = 'right';
+      ctx.font = '24px sans-serif';
+      ctx.fillStyle = '#ffd65a88';
+      ctx.fillText(stars + (done ? ' ✓' : ''), mx + btnW / 2 - 20, my + 44);
+
+      if (unlocked) {
+        drawHud._missionBtns.push({ x: mx - btnW / 2, y: my, w: btnW, h: btnH, index: i });
+      }
+      my += btnH + 12;
+    }
+
+    // Back button
+    my += 20;
+    ctx.fillStyle = '#5a3a2a';
+    ctx.beginPath(); ctx.roundRect(mx - 200, my, 400, 70, 12); ctx.fill();
+    ctx.fillStyle = '#f0e0b0';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 34px serif';
+    ctx.fillText('BACK', mx, my + 48);
+    drawHud._missionBackBtn = { x: mx - 200, y: my, w: 400, h: 70 };
+  } else {
+    drawHud._missionBtns = null;
+    drawHud._missionBackBtn = null;
+  }
+
+  // Briefing screen
+  if (state.briefing && state.missionDef) {
+    ctx.fillStyle = '#000000dd';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    const mx = CANVAS_W / 2;
+    const m = state.missionDef;
+
+    ctx.fillStyle = '#ffd65a';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 64px serif';
+    ctx.fillText(m.name, mx, CANVAS_H * 0.3);
+
+    ctx.fillStyle = '#ffffffcc';
+    ctx.font = '30px sans-serif';
+    ctx.fillText(m.brief, mx, CANVAS_H * 0.3 + 60);
+
+    ctx.fillStyle = '#ffd65a88';
+    ctx.font = '28px sans-serif';
+    ctx.fillText('★'.repeat(m.difficulty) + '☆'.repeat(3 - m.difficulty), mx, CANVAS_H * 0.3 + 110);
+
+    ctx.fillStyle = '#4a8a2a';
+    ctx.beginPath(); ctx.roundRect(mx - 200, CANVAS_H * 0.6, 400, 80, 14); ctx.fill();
+    ctx.fillStyle = '#ffffffee';
+    ctx.font = 'bold 38px sans-serif';
+    ctx.fillText('START MISSION', mx, CANVAS_H * 0.6 + 54);
+    drawHud._briefingStartBtn = { x: mx - 200, y: CANVAS_H * 0.6, w: 400, h: 80 };
+
+    ctx.fillStyle = '#5a3a2a';
+    ctx.beginPath(); ctx.roundRect(mx - 150, CANVAS_H * 0.6 + 100, 300, 60, 10); ctx.fill();
+    ctx.fillStyle = '#f0e0b0';
+    ctx.font = 'bold 28px serif';
+    ctx.fillText('BACK', mx, CANVAS_H * 0.6 + 140);
+    drawHud._briefingBackBtn = { x: mx - 150, y: CANVAS_H * 0.6 + 100, w: 300, h: 60 };
+  } else {
+    drawHud._briefingStartBtn = null;
+    drawHud._briefingBackBtn = null;
+  }
+
+  // Mission win screen
+  if (state.missionWin) {
+    ctx.fillStyle = '#000000cc';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    const mx = CANVAS_W / 2;
+    ctx.fillStyle = '#80ff60';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 80px serif';
+    ctx.fillText('MISSION', mx, CANVAS_H * 0.3);
+    ctx.fillText('COMPLETE', mx, CANVAS_H * 0.3 + 80);
+
+    ctx.fillStyle = '#ffd65a';
+    ctx.font = 'bold 44px sans-serif';
+    ctx.fillText(`SCORE: ${state.kills}`, mx, CANVAS_H * 0.3 + 160);
+
+    ctx.fillStyle = '#ffffffaa';
+    ctx.font = '30px sans-serif';
+    ctx.fillText('TAP TO CONTINUE', mx, CANVAS_H * 0.7);
   }
 
   // Version

@@ -13,6 +13,7 @@ import { PLAYER, ENEMY, WORLD } from './config.js';
 import { Balloon, Zeppelin, Artillery, HealthPickup } from './targets.js';
 import { Weather } from './weather.js';
 import { GameState, STATE, saveSettings } from './game.js';
+import { MISSIONS, MissionState } from './missions.js';
 import { initAudio, startWind, stopWind, playFlyby, playExplosion, playDeathWhine, playGunBurst, playHit, playKill } from './audio.js';
 import { mpAvailable, mpOpenLobby, mpIsHost, mpRoom, mpSend, mpInit, mpLeave,
          mpSetMessageHandler, mpSetDisconnectHandler, mpGetRemotes, mpInterpolateRemote } from './multiplayer.js';
@@ -93,6 +94,10 @@ overlayCanvas.addEventListener('pointerdown', (e) => {
 
   // ---- Menu ----
   if (gs.state === STATE.MENU) {
+    if (inBtn(drawHud._missionsBtn)) {
+      gs.state = STATE.MISSION_SELECT;
+      return;
+    }
     if (inBtn(drawHud._mpBtn) && mpAvailable()) {
       mpOpenLobby({
         onStart: (isHost) => mpStartGame(isHost),
@@ -100,9 +105,46 @@ overlayCanvas.addEventListener('pointerdown', (e) => {
       });
       return;
     }
+    // Solo flight (endless mode).
     mpMode = false;
+    gs.mission = null;
+    gs.missionDef = null;
     resetGameObjects();
     gs.startRun();
+    return;
+  }
+
+  // ---- Mission select ----
+  if (gs.state === STATE.MISSION_SELECT) {
+    if (inBtn(drawHud._missionBackBtn)) { gs.state = STATE.MENU; return; }
+    if (drawHud._missionBtns) {
+      for (const mb of drawHud._missionBtns) {
+        if (inBtn(mb)) {
+          gs.missionDef = MISSIONS[mb.index];
+          gs.state = STATE.BRIEFING;
+          return;
+        }
+      }
+    }
+    return;
+  }
+
+  // ---- Briefing ----
+  if (gs.state === STATE.BRIEFING) {
+    if (inBtn(drawHud._briefingBackBtn)) { gs.state = STATE.MISSION_SELECT; return; }
+    if (inBtn(drawHud._briefingStartBtn)) {
+      mpMode = false;
+      gs.mission = new MissionState(gs.missionDef);
+      resetGameObjects();
+      gs.startRun();
+      return;
+    }
+    return;
+  }
+
+  // ---- Mission win ----
+  if (gs.state === STATE.MISSION_WIN) {
+    gs.state = STATE.MISSION_SELECT;
     return;
   }
 
@@ -474,7 +516,9 @@ function loop(t) {
     }
     if (plane.hp < prevPlayerHp) playHit();
     prevPlayerHp = plane.hp;
-    gs.updateWave(dt);
+    if (gs.updateWave(dt) && gs.mission) {
+      gs.mission.onWaveComplete(gs.wave);
+    }
 
     // Downed enemies begin a death spiral (stay alive for the animation);
     // they're cleaned up when they hit the ground and explode.
@@ -485,6 +529,11 @@ function loop(t) {
         if (e.type === 'plane') gs.planeKills++;
         else if (e.type === 'balloon') gs.balloonKills++;
         else if (e.type === 'zeppelin') gs.zeppelinKills++;
+        // Mission objective tracking.
+        if (gs.mission) {
+          gs.mission.onKill(e.type);
+          if (e.variant === 'ace') gs.mission.onKill('ace');
+        }
         playKill();
         // Initial "catches fire" burst — scaled to size.
         const ignite = e.type === 'zeppelin' ? 28 : e.type === 'balloon' ? 14 : 4;
@@ -670,6 +719,21 @@ function loop(t) {
       }
     }
 
+    // Mission objective tracking: update timer + check win condition.
+    if (gs.mission && gs.mission.active) {
+      gs.mission.update(dt);
+      // Check return-to-base (within 80m of airfield).
+      const abDist = Math.hypot(plane.position.x - WORLD.AIRFIELD_X, plane.position.z - WORLD.AIRFIELD_Z);
+      if (abDist < 80) gs.mission.onReturnBase();
+      // Check win.
+      if (gs.mission.checkWin()) {
+        gs.mission.active = false;
+        gs.mission.won = true;
+        MissionState.markCompleted(gs.mission.def.id);
+        gs.state = STATE.MISSION_WIN;
+      }
+    }
+
     // Flyby sound when any alive enemy passes close.
     for (const e of enemies) {
       if (!e.alive || e.type !== 'plane') continue;
@@ -738,6 +802,14 @@ function loop(t) {
     menu: gs.state === STATE.MENU,
     showTutorial: gs.showTutorial,
     paused: gs.state === STATE.PAUSED,
+    mission: gs.mission,
+    missionWin: gs.state === STATE.MISSION_WIN,
+    missionSelect: gs.state === STATE.MISSION_SELECT,
+    briefing: gs.state === STATE.BRIEFING,
+    missionDef: gs.missionDef,
+    missionList: MISSIONS,
+    missionsCompleted: MissionState.getCompleted(),
+    missionUnlocked: MissionState.isUnlocked,
     settingsOpen: gs.settingsOpen,
     settings: gs.settings,
     mpAvailable: mpAvailable(),
