@@ -571,7 +571,9 @@ function loop(t) {
     if (plane.hp < prevPlayerHp) playHit();
     prevPlayerHp = plane.hp;
     if (gs.updateWave(dt) && gs.mission) {
-      gs.mission.onWaveComplete(gs.wave);
+      // Report the wave that just ENDED (gs.wave - 1), not the one starting.
+      // Wave 3 is "survived" when wave 4 begins (all wave-3 enemies cleared).
+      gs.mission.onWaveComplete(gs.wave - 1);
     }
 
     // Downed enemies begin a death spiral (stay alive for the animation);
