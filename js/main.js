@@ -136,6 +136,14 @@ overlayCanvas.addEventListener('pointerdown', (e) => {
       mpMode = false;
       gs.mission = new MissionState(gs.missionDef);
       resetGameObjects();
+      // Resolve 'all' targets to actual spawned counts.
+      for (const obj of gs.mission.def.objectives) {
+        if (obj.target === 'all') {
+          const typeMap = { kill_artillery: 'artillery', kill_planes: 'plane', kill_balloons: 'balloon' };
+          const t = typeMap[obj.type];
+          if (t) obj.target = enemies.filter(e => e.type === t && e.alive).length;
+        }
+      }
       gs.startRun();
       return;
     }
