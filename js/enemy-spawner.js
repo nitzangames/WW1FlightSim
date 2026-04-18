@@ -13,10 +13,10 @@ export class Spawner {
     this.scene = scene;
   }
 
-  maybeSpawn(enemies, player, kills) {
+  maybeSpawn(enemies, player, kills, missionSpawn = null) {
+    // If a mission sets planes:0, don't spawn any fighters.
+    if (missionSpawn && missionSpawn.planes === 0) return;
     const goal = targetCount(kills);
-    // Only fighter planes count toward the cap — balloons/zeppelins are
-    // persistent bonus targets that shouldn't starve the wave spawner.
     const planeCount = () => enemies.reduce(
       (n, e) => n + ((e.type === 'plane' || !e.type) && e.alive && !e.dying ? 1 : 0), 0);
     while (planeCount() < goal) {

@@ -525,7 +525,7 @@ function loop(t) {
       enemyTracers.spawn({ x: ox, y: oy, z: oz }, plane.position, extraSpread);
     }
     spawner.removeDead(enemies);
-    spawner.maybeSpawn(enemies, plane, gs.kills);
+    spawner.maybeSpawn(enemies, plane, gs.kills, gs.mission ? gs.mission.def.spawn : null);
     // Ammo / reload gating — guns only fire if we have ammo.
     gs.updateReload(dt);
     const canFire = !gs.reloading && gs.ammo > 0;

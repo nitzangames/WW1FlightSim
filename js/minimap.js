@@ -40,15 +40,16 @@ export function drawMinimap(ctx, player, enemies, { cx, cy, radius, allies, pick
   ctx.closePath();
   ctx.fill();
 
-  // Enemy dots
+  // Enemy dots — ace gets a gold marker, others red.
   for (const e of enemies) {
     if (!e.alive) continue;
     const p = worldToRadar(player, e.position, radius, 2000);
     const altDelta = e.position.y - player.position.y;
     const altScale = Math.max(0.5, Math.min(1.4, 1 - altDelta / 400));
-    ctx.fillStyle = '#ff4a4a';
+    const isAce = e.variant === 'ace';
+    ctx.fillStyle = isAce ? '#ffd65a' : '#ff4a4a';
     ctx.beginPath();
-    ctx.arc(cx + p.x, cy + p.y, 6 * altScale, 0, Math.PI * 2);
+    ctx.arc(cx + p.x, cy + p.y, (isAce ? 9 : 6) * altScale, 0, Math.PI * 2);
     ctx.fill();
   }
 
