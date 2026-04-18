@@ -20,9 +20,9 @@ export const MISSIONS = [
   {
     id: 'bombing_run',
     name: 'Bombing Run',
-    brief: 'Strafe and destroy all enemy artillery emplacements.',
+    brief: 'Strafe and destroy 4 enemy artillery batteries.',
     difficulty: 1,
-    objectives: [{ type: 'kill_artillery', target: 'all' }],
+    objectives: [{ type: 'kill_artillery', target: 4 }],
     spawn: { planes: 1, balloons: 0, zeppelin: false, artillery: 6 },
   },
   {
