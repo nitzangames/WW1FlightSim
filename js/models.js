@@ -305,7 +305,7 @@ export function buildZeppelin() {
   group.add(body);
 
   // 4 cruciform tail fins
-  const finGeo = new THREE.BoxGeometry(0.35, 5.5, 5);
+  const finGeo = new THREE.BoxGeometry(0.35, 11, 10);
   for (let i = 0; i < 4; i++) {
     const a = (i / 4) * Math.PI * 2;
     const fin = new THREE.Mesh(finGeo, skin);
