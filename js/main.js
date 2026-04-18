@@ -264,6 +264,11 @@ overlayCanvas.addEventListener('pointerup', () => joystick.up());
 overlayCanvas.addEventListener('pointercancel', () => joystick.up());
 
 function resetGameObjects() {
+  // Clean up checkpoint rings from any previous mission.
+  if (gs.mission && gs.mission._ringMeshes) {
+    for (const m of gs.mission._ringMeshes) scene.remove(m);
+    gs.mission._ringMeshes = [];
+  }
   for (const e of enemies) scene.remove(e.mesh);
   enemies.length = 0;
   // Start on the runway: near the end of the strip, facing down the runway (-Z).
