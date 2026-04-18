@@ -694,8 +694,8 @@ export function drawHud(ctx, state) {
       ctx.fillText(unlocked ? m.name : '🔒 Locked', mx - btnW / 2 + 20, my + 44);
       ctx.textAlign = 'right';
       ctx.font = '24px sans-serif';
-      ctx.fillStyle = '#ffd65a88';
-      ctx.fillText(stars + (done ? ' ✓' : ''), mx + btnW / 2 - 20, my + 44);
+      ctx.fillStyle = done ? '#80ff80' : '#ffffff44';
+      ctx.fillText(done ? '✓' : '', mx + btnW / 2 - 20, my + 44);
 
       if (unlocked) {
         drawHud._missionBtns.push({ x: mx - btnW / 2, y: my, w: btnW, h: btnH, index: i });
@@ -733,9 +733,6 @@ export function drawHud(ctx, state) {
     ctx.font = '30px sans-serif';
     ctx.fillText(m.brief, mx, CANVAS_H * 0.3 + 60);
 
-    ctx.fillStyle = '#ffd65a88';
-    ctx.font = '28px sans-serif';
-    ctx.fillText('★'.repeat(m.difficulty) + '☆'.repeat(3 - m.difficulty), mx, CANVAS_H * 0.3 + 110);
 
     ctx.fillStyle = '#4a8a2a';
     ctx.beginPath(); ctx.roundRect(mx - 200, CANVAS_H * 0.6, 400, 80, 14); ctx.fill();
