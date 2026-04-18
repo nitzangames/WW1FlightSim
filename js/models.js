@@ -337,28 +337,39 @@ export function buildZeppelin() {
   return group;
 }
 
-// Ground artillery emplacement: sandbag ring + cannon tube.
+// Ground artillery emplacement: sandbag ring + cannon tube + flag marker.
+// Scaled ~2.5x so it's visible from flight altitude.
 export function buildArtillery() {
   const group = new THREE.Group();
   const sand = new THREE.MeshLambertMaterial({ color: 0x8a7a5a });
   const metal = new THREE.MeshLambertMaterial({ color: 0x3a3a3a });
-  // Sandbag ring (low cylinder)
-  const ring = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.5, 1.0, 10), sand);
-  ring.position.y = 0.5;
+  const dark = new THREE.MeshLambertMaterial({ color: 0x4a3a22 });
+  // Sandbag ring
+  const ring = new THREE.Mesh(new THREE.CylinderGeometry(5, 6, 2.5, 10), sand);
+  ring.position.y = 1.25;
   group.add(ring);
-  // Inner floor (darker)
-  const floor = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 0.2, 10), new THREE.MeshLambertMaterial({ color: 0x4a3a22 }));
-  floor.position.y = 0.7;
+  // Inner floor
+  const floor = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, 0.3, 10), dark);
+  floor.position.y = 1.8;
   group.add(floor);
   // Cannon tube (tilted upward)
-  const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 3.5, 8), metal);
-  tube.rotation.x = -Math.PI / 5; // tilted ~36° up
-  tube.position.set(0, 1.6, -0.8);
+  const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.5, 8, 8), metal);
+  tube.rotation.x = -Math.PI / 5;
+  tube.position.set(0, 4, -2);
   group.add(tube);
   // Base/mount
-  const base = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.4, 0.8), metal);
-  base.position.set(0, 1.0, 0);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 2), metal);
+  base.position.set(0, 2.5, 0);
   group.add(base);
+  // Flag pole + flag so it's visible from altitude
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 12, 6),
+    new THREE.MeshLambertMaterial({ color: 0x666666 }));
+  pole.position.set(5.5, 6, 0);
+  group.add(pole);
+  const flag = new THREE.Mesh(new THREE.BoxGeometry(3, 1.8, 0.1),
+    new THREE.MeshLambertMaterial({ color: 0xcc2020 }));
+  flag.position.set(7, 11, 0);
+  group.add(flag);
   return group;
 }
 

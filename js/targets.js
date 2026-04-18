@@ -176,7 +176,7 @@ export class Artillery {
     this.id = _targetId++;
     this.type = 'artillery';
     this.killValue = 1;
-    const y = WORLD.GROUND_Y + terrainHeight(x, z) + 0.5;
+    const y = WORLD.GROUND_Y + terrainHeight(x, z) + 1;
     this.position = { x, y, z };
     this.forward = { x: 0, y: 0, z: -1 };
     this.yaw = Math.random() * Math.PI * 2;
