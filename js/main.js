@@ -141,8 +141,8 @@ overlayCanvas.addEventListener('pointerdown', (e) => {
         const count = gs.missionDef.objectives.find(o => o.type === 'checkpoints').target;
         const ringGeo = new THREE.TorusGeometry(18, 1.5, 8, 24);
         const ringMatActive = new THREE.MeshBasicMaterial({ color: 0x40ff60, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
-        const ringMatFuture = new THREE.MeshBasicMaterial({ color: 0x40ff60, transparent: true, opacity: 0.25, side: THREE.DoubleSide });
-        const ringMatDone = new THREE.MeshBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.15, side: THREE.DoubleSide });
+        const ringMatFuture = new THREE.MeshBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.2, side: THREE.DoubleSide });
+        const ringMatDone = new THREE.MeshBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.1, side: THREE.DoubleSide });
         gs.mission.checkpoints = [];
         gs.mission._ringMeshes = [];
         gs.mission._ringMats = { active: ringMatActive, future: ringMatFuture, done: ringMatDone };
