@@ -13,7 +13,7 @@ export class Enemy {
     this.pitch = 0;
     this.roll = 0;
     this.variant = variant;
-    const hpMult = variant === 'ace' ? 1.7 : 1.0;
+    const hpMult = variant === 'ace' ? 5.0 : 1.0;
     const speedMult = variant === 'ace' ? 1.1 : 1.0;
     this.hp = ENEMY.HP * hpMult;
     this.maxHp = this.hp;
