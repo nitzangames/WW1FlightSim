@@ -136,6 +136,18 @@ overlayCanvas.addEventListener('pointerdown', (e) => {
       mpMode = false;
       gs.mission = new MissionState(gs.missionDef);
       resetGameObjects();
+      // Spawn mission-specific enemies.
+      if (gs.missionDef.spawn && gs.missionDef.spawn.ace) {
+        const a = Math.random() * Math.PI * 2;
+        const r = 600 + Math.random() * 300;
+        const ace = new Enemy({
+          x: Math.sin(a) * r, y: 200 + Math.random() * 40,
+          z: Math.cos(a) * r, mode: 'chaser', variant: 'ace',
+        });
+        ace.yaw = a; // face toward origin
+        enemies.push(ace);
+        scene.add(ace.mesh);
+      }
       // Resolve 'all' targets to actual spawned counts.
       for (const obj of gs.mission.def.objectives) {
         if (obj.target === 'all') {
