@@ -281,13 +281,13 @@ overlayCanvas.addEventListener('pointerdown', (e) => {
   joystick.down(p.x, p.y);
 });
 let lastMoveY = 0;
+let scrollDragging = false;
 overlayCanvas.addEventListener('pointermove', (e) => {
   const p = screenToCanvas(e.clientX, e.clientY);
-  // Scroll the mission list when dragging.
-  if (gs.state === STATE.MISSION_SELECT) {
+  // Only scroll when pointer is held down.
+  if (gs.state === STATE.MISSION_SELECT && scrollDragging) {
     const dy = p.y - lastMoveY;
     gs.missionScrollY = Math.max(0, gs.missionScrollY - dy);
-    // Clamp to content height.
     const maxScroll = Math.max(0, (drawHud._missionContentH || 0) - (CANVAS_H - 290));
     gs.missionScrollY = Math.min(gs.missionScrollY, maxScroll);
   }
@@ -296,7 +296,10 @@ overlayCanvas.addEventListener('pointermove', (e) => {
 });
 overlayCanvas.addEventListener('pointerdown', (e2) => {
   lastMoveY = screenToCanvas(e2.clientX, e2.clientY).y;
-}, true); // capture phase so lastMoveY is set before the other handler
+  if (gs.state === STATE.MISSION_SELECT) scrollDragging = true;
+}, true);
+overlayCanvas.addEventListener('pointerup', () => { scrollDragging = false; });
+overlayCanvas.addEventListener('pointercancel', () => { scrollDragging = false; });
 overlayCanvas.addEventListener('pointerup', () => joystick.up());
 overlayCanvas.addEventListener('pointercancel', () => joystick.up());
 
