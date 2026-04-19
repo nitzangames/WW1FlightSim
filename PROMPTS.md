@@ -348,3 +348,210 @@ Chronological log of every prompt the user has given Claude for this project. Ap
 
 > I like A, but there should also be a cross on the balloon
 > picking it up should replenish your HP
+
+## 68. Nothing loading
+
+> nothing is loading
+
+## 69. Confirm localhost
+
+> http://localhost:8765/ right ?
+
+## 70. Import error
+
+> Uncaught SyntaxError: The requested module './audio.js' does not provide an export named 'playDeathWhine'
+
+## 71. Plane shouldn't rotate on menu
+
+> I don't think the plane should rotate in the main menu. IF anything the camera should orbit around the plane
+
+## 72. Move airfield + green pickups + CO-OP label
+
+> move the airfield so its not at the center of the map. Mark the health balloons on the minimap as green
+> change the "multiplayer" label to "co-op multiplayer"
+
+## 73. Smooth enemy turning
+
+> the enemies don't fly smoothly, they especially don't turn smoothly
+
+## 74. Deploy
+
+> lets deploy it!
+
+## 75. Show allies on minimap
+
+> If I am playing coop, I want to the other player on the map.
+
+## 76. Airfield + takeoff (retry)
+
+> Can you add an airfield and have the player takeoff from an airfield at start?
+
+## 77. Menu mockups
+
+> also lets work on the look and feel of the menus. Can you show me some mockup ideas?
+
+## 78. Pick vintage + 3D plane
+
+> A is great, but render the actual plane model
+
+## 79. Menu button + lower HUD
+
+> I think we should add a button the main menu for multiplayer. Also, now that we have a dial for hp, we can remove the bar and lower the hud down so more of the screen is visible.
+
+## 80. Which localhost
+
+> which localhost are the changes on?
+
+## 81. No changes visible
+
+> I don't see any of the changes, what version should the game be?
+
+## 82. Aiming too forgiving
+
+> I think the aiming reticle is too forgiving
+
+## 83. Scoring values
+
+> I thkn the player should get 1 point for balloon, 2 for fighter, and 5 for zepplin.
+
+## 84. Show score not kills
+
+> instead of kills show score. The game over screen should show the score brekadown too.
+
+## 85. Deploy
+
+> looks good! deploy
+
+## 86. Clouds bad on mobile
+
+> on mobile some of the clouds have weird RGB color spots
+
+## 87. Still bad
+
+> clouds still look bad.
+
+## 88. Mobile cloud screenshot
+
+> (screenshot showing RGB noise on clouds on mobile Safari)
+
+## 89. White clouds vs grey fog
+
+> the clouds are white even though the fog is gray, I assume due to weather.
+
+## 90. Sky match weather?
+
+> does the sky change color to fit the weather?
+
+## 91. Deploy
+
+> great, lets deploy
+
+## 92. Leaderboards
+
+> I want to add a leaderboard, from playSDK. Users should see how their score stacks up against other players when they die. We can have two leaderboards, one for single player and one for coop. For coop. On the main menu it would be great if we can also show your highest score for both + your rank on the leaderboard.
+
+## 93. PlaySDK only?
+
+> do the leaderboards only work when deployed to playSDK?
+
+## 94. Deploy
+
+> ok deploy
+
+## 95. Tutorial popup
+
+> When the play is taking off show a quick popup explaining how to fly and that we have auto-shoot. Only need to show the popup once, the first time someone plays.
+
+## 96. Missions
+
+> I want to add missions to the game. So there will be 3 modes: endless, endless co-op, and missons. The missions can be something like "destroy 5 enemy planes, destroy 3 balloons, destory a zepplin, survive 3 minutes, fly a patrol (with checkpoints)" Any other ideas for missions we can implement? Also did we add artillery to the game? I never saw it.
+
+## 97. Artillery size + escort question
+
+> Can we make the artillery bigger? are we sure its not hidden by the terrain? For the zepplin escort, will enemies attack it? Otherwise sounds good!
+
+## 98. Build missions
+
+> yes lets do it
+
+## 99. Mission win delay + text size
+
+> wait 1 second before showing the missions complete screen. Double the size of the mission text in-game.
+
+## 100. Balloon mission didn't complete
+
+> I destroyed 3 balloons and the missions wasnt over
+
+## 101. Artillery mission instant complete
+
+> I started the artillery mission and got a mission complete 1 second after takeoff
+
+## 102. Artillery target count
+
+> the artillery mission should be to destroy 4 batteries.
+
+## 103. Ace not visible
+
+> in the ace mission, how do I know where the ace is?
+
+## 104. Version bumping
+
+> which version is the new ace stuff on? are you updating the version number for every change like I asked?
+
+## 105. Ace dot still red + more HP
+
+> the ace dot is still red. not gold. Also the ace needs 5x the hp of a regular plane
+
+## 106. Zeppelin HP + checkpoints
+
+> How much hp do zepplins have?
+> yes lets make it 350. For the patrol mission I don't see any checkpoints. They shold also appear on the minimap
+
+## 107. Remove stars
+
+> I think we should remove the stars, they are confusing
+
+## 108. Ring colors
+
+> the ring I need to fly to should be green, the rest should be gray
+
+## 109. Rings persist after mission
+
+> the rings stayed in the sky after finishing the patrol mission and going to a new mission
+
+## 110. Survive waves timing
+
+> in survive 3 waves, the game ended when the 3rd wave started. It should end when the 3rd wave is defeated.
+
+## 111. Escort: where is it?
+
+> in the escort mission, how do I know who I am escorting and for how long?
+
+## 112. Escort start near me
+
+> The zepplin should start close to me
+
+## 113. Bigger zeppelin fins
+
+> make the fins on all the zepplins 2x longer.
+
+## 114. Return-to-base premature
+
+> final mission, return to base was marked as done as I took off, it should only check if I am back at base after destroying the fighers and balloons
+
+## 115. Medals + 20 more missions + scrollable
+
+> instead of a checkmark, show a medal for each completed mission. Add 10 more missons that are double the difficulty, and 10 more that are triple. Make the screen scrollable.
+
+## 116. Scroll without clicking
+
+> the missions screen seems to scroll just by mouse movmenet without me clicking down
+
+## 117. Deploy
+
+> great, deploy it
+> and push
+
+## 118. Prompts recording
+
+> have you stopped recording prompts?
