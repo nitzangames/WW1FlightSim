@@ -666,7 +666,7 @@ export function drawHud(ctx, state) {
     }
   }
 
-  // Mission select screen
+  // Mission select screen (scrollable)
   if (state.missionSelect) {
     ctx.fillStyle = '#000000dd';
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
@@ -674,45 +674,107 @@ export function drawHud(ctx, state) {
     ctx.fillStyle = '#ffd65a';
     ctx.textAlign = 'center';
     ctx.font = 'bold 72px serif';
-    ctx.fillText('MISSIONS', mx, 120);
+    ctx.fillText('MISSIONS', mx, 110);
 
     const missions = state.missionList || [];
     const completed = state.missionsCompleted || [];
+    const scrollY = state.missionScrollY || 0;
+    const btnW = 860, btnH = 80;
+    const listTop = 160, listBot = CANVAS_H - 130;
+
+    // Clip to the scrollable area.
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, listTop, CANVAS_W, listBot - listTop);
+    ctx.clip();
+
     drawHud._missionBtns = [];
-    const btnW = 700, btnH = 72;
-    let my = 180;
-    for (let i = 0; i < missions.length; i++) {
-      const m = missions[i];
-      const unlocked = state.missionUnlocked ? state.missionUnlocked(m, i) : true;
-      const done = completed.includes(m.id);
-      const stars = '★'.repeat(m.difficulty) + '☆'.repeat(3 - m.difficulty);
+    // Tier labels
+    const tiers = [
+      { start: 0, end: 10, label: 'TIER 1' },
+      { start: 10, end: 20, label: 'TIER 2' },
+      { start: 20, end: 30, label: 'TIER 3' },
+    ];
 
-      ctx.fillStyle = unlocked ? (done ? '#2a5a2a' : '#3a3a4a') : '#2a2a2a';
-      ctx.beginPath(); ctx.roundRect(mx - btnW / 2, my, btnW, btnH, 10); ctx.fill();
-      ctx.fillStyle = unlocked ? '#ffffffdd' : '#ffffff44';
-      ctx.font = 'bold 28px sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText(unlocked ? m.name : '🔒 Locked', mx - btnW / 2 + 20, my + 44);
-      ctx.textAlign = 'right';
-      ctx.font = '24px sans-serif';
-      ctx.fillStyle = done ? '#80ff80' : '#ffffff44';
-      ctx.fillText(done ? '✓' : '', mx + btnW / 2 - 20, my + 44);
+    let my = listTop - scrollY;
+    for (const tier of tiers) {
+      if (tier.start >= missions.length) break;
+      // Tier header
+      ctx.fillStyle = '#ffd65a88';
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 30px sans-serif';
+      ctx.fillText(tier.label, mx, my + 30);
+      my += 50;
 
-      if (unlocked) {
-        drawHud._missionBtns.push({ x: mx - btnW / 2, y: my, w: btnW, h: btnH, index: i });
+      for (let i = tier.start; i < Math.min(tier.end, missions.length); i++) {
+        const m = missions[i];
+        const unlocked = state.missionUnlocked ? state.missionUnlocked(m, i) : true;
+        const done = completed.includes(m.id);
+
+        ctx.fillStyle = unlocked ? (done ? '#2a4a2a' : '#3a3a4a') : '#222222';
+        ctx.beginPath(); ctx.roundRect(mx - btnW / 2, my, btnW, btnH, 10); ctx.fill();
+
+        // Mission number
+        ctx.fillStyle = unlocked ? '#ffffff55' : '#ffffff22';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${i + 1}.`, mx - btnW / 2 + 16, my + 50);
+
+        // Name
+        ctx.fillStyle = unlocked ? '#ffffffdd' : '#ffffff44';
+        ctx.font = 'bold 30px sans-serif';
+        ctx.fillText(unlocked ? m.name : 'Locked', mx - btnW / 2 + 66, my + 50);
+
+        // Medal for completed missions (gold circle + ribbon)
+        if (done) {
+          const medX = mx + btnW / 2 - 40, medY = my + 40;
+          // Ribbon
+          ctx.fillStyle = '#cc2020';
+          ctx.fillRect(medX - 8, medY - 18, 16, 14);
+          // Gold circle
+          ctx.fillStyle = '#d4a830';
+          ctx.beginPath(); ctx.arc(medX, medY + 2, 14, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#f0d060';
+          ctx.beginPath(); ctx.arc(medX, medY + 2, 10, 0, Math.PI * 2); ctx.fill();
+          // Star in center
+          ctx.fillStyle = '#8a6a10';
+          ctx.font = 'bold 14px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('★', medX, medY + 8);
+        }
+
+        if (unlocked) {
+          drawHud._missionBtns.push({ x: mx - btnW / 2, y: my, w: btnW, h: btnH, index: i });
+        }
+        my += btnH + 10;
       }
-      my += btnH + 12;
+      my += 10; // gap between tiers
     }
 
-    // Back button
-    my += 20;
+    // Track total content height for scroll clamping.
+    drawHud._missionContentH = my + scrollY - listTop;
+
+    ctx.restore(); // end clip
+
+    // Scroll indicator if content overflows.
+    const contentH = drawHud._missionContentH || 0;
+    const viewH = listBot - listTop;
+    if (contentH > viewH) {
+      const barH = Math.max(40, (viewH / contentH) * viewH);
+      const barY = listTop + (scrollY / (contentH - viewH)) * (viewH - barH);
+      ctx.fillStyle = '#ffffff33';
+      ctx.beginPath(); ctx.roundRect(CANVAS_W - 18, barY, 8, barH, 4); ctx.fill();
+    }
+
+    // Back button (fixed at bottom)
+    const backY = CANVAS_H - 110;
     ctx.fillStyle = '#5a3a2a';
-    ctx.beginPath(); ctx.roundRect(mx - 200, my, 400, 70, 12); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(mx - 200, backY, 400, 70, 12); ctx.fill();
     ctx.fillStyle = '#f0e0b0';
     ctx.textAlign = 'center';
     ctx.font = 'bold 34px serif';
-    ctx.fillText('BACK', mx, my + 48);
-    drawHud._missionBackBtn = { x: mx - 200, y: my, w: 400, h: 70 };
+    ctx.fillText('BACK', mx, backY + 48);
+    drawHud._missionBackBtn = { x: mx - 200, y: backY, w: 400, h: 70 };
   } else {
     drawHud._missionBtns = null;
     drawHud._missionBackBtn = null;

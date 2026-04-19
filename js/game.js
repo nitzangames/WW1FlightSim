@@ -36,8 +36,9 @@ export class GameState {
     this.stateBeforePause = null;
     this.settingsOpen = false;
     this.settings = loadSettings();
-    this.mission = null;       // MissionState instance, null for endless mode
-    this.missionDef = null;    // mission definition for briefing display
+    this.mission = null;
+    this.missionDef = null;
+    this.missionScrollY = 0;   // scroll offset for mission select screen
     this.waveFlash = 0; // countdown timer for wave announcement
     this.ammo = 200;
     this.maxAmmo = 200;

@@ -114,12 +114,14 @@ overlayCanvas.addEventListener('pointerdown', (e) => {
     return;
   }
 
-  // ---- Mission select ----
+  // ---- Mission select (scrollable) ----
   if (gs.state === STATE.MISSION_SELECT) {
     if (inBtn(drawHud._missionBackBtn)) { gs.state = STATE.MENU; return; }
     if (drawHud._missionBtns) {
       for (const mb of drawHud._missionBtns) {
-        if (inBtn(mb)) {
+        // Adjust button Y by scroll offset for hit testing.
+        const adjBtn = { ...mb, y: mb.y };
+        if (inBtn(adjBtn)) {
           gs.missionDef = MISSIONS[mb.index];
           gs.state = STATE.BRIEFING;
           return;
@@ -278,10 +280,23 @@ overlayCanvas.addEventListener('pointerdown', (e) => {
   }
   joystick.down(p.x, p.y);
 });
+let lastMoveY = 0;
 overlayCanvas.addEventListener('pointermove', (e) => {
   const p = screenToCanvas(e.clientX, e.clientY);
+  // Scroll the mission list when dragging.
+  if (gs.state === STATE.MISSION_SELECT) {
+    const dy = p.y - lastMoveY;
+    gs.missionScrollY = Math.max(0, gs.missionScrollY - dy);
+    // Clamp to content height.
+    const maxScroll = Math.max(0, (drawHud._missionContentH || 0) - (CANVAS_H - 290));
+    gs.missionScrollY = Math.min(gs.missionScrollY, maxScroll);
+  }
+  lastMoveY = p.y;
   joystick.move(p.x, p.y);
 });
+overlayCanvas.addEventListener('pointerdown', (e2) => {
+  lastMoveY = screenToCanvas(e2.clientX, e2.clientY).y;
+}, true); // capture phase so lastMoveY is set before the other handler
 overlayCanvas.addEventListener('pointerup', () => joystick.up());
 overlayCanvas.addEventListener('pointercancel', () => joystick.up());
 
@@ -959,6 +974,7 @@ function loop(t) {
     missionSelect: gs.state === STATE.MISSION_SELECT,
     briefing: gs.state === STATE.BRIEFING,
     missionDef: gs.missionDef,
+    missionScrollY: gs.missionScrollY,
     missionList: MISSIONS,
     missionsCompleted: MissionState.getCompleted(),
     missionUnlocked: MissionState.isUnlocked,
