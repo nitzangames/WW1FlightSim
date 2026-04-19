@@ -843,9 +843,14 @@ function loop(t) {
           gs.die(); // mission failed = game over
         }
       }
-      // Check return-to-base (within 80m of airfield).
+      // Check return-to-base — only after all OTHER objectives are done.
       const abDist = Math.hypot(plane.position.x - WORLD.AIRFIELD_X, plane.position.z - WORLD.AIRFIELD_Z);
-      if (abDist < 80) gs.mission.onReturnBase();
+      const othersDone = gs.mission.def.objectives.every((obj, i) => {
+        if (obj.type === 'return_base') return true;
+        const val = gs.mission.progress[i] || 0;
+        return val >= obj.target;
+      });
+      if (othersDone && abDist < 80) gs.mission.onReturnBase();
       // Check checkpoint proximity.
       if (gs.mission.checkpoints && gs.mission.nextCheckpoint < gs.mission.checkpoints.length) {
         const cp = gs.mission.checkpoints[gs.mission.nextCheckpoint];
