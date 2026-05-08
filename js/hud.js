@@ -500,6 +500,7 @@ export function drawHud(ctx, state) {
     ctx.font = '30px sans-serif';
     let ty = boxY + 130;
     ctx.fillText('Touch & drag anywhere', mx, ty); ty += 44;
+    ctx.fillText('or use WASD / Arrow keys', mx, ty); ty += 44;
     ctx.fillText('to steer your plane', mx, ty); ty += 70;
 
     ctx.fillStyle = '#ffd65a';

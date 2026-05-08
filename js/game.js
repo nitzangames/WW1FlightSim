@@ -4,9 +4,9 @@ export const STATE = { MENU: 'menu', MISSION_SELECT: 'mission_select', BRIEFING:
 const SETTINGS_KEY = 'ww1.settings';
 export function loadSettings() {
   try {
-    return { soundOn: true, invertY: false, sensitivity: 1.0,
+    return { soundOn: true, invertY: true, sensitivity: 1.0,
       ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') };
-  } catch (_) { return { soundOn: true, invertY: false, sensitivity: 1.0 }; }
+  } catch (_) { return { soundOn: true, invertY: true, sensitivity: 1.0 }; }
 }
 export function saveSettings(s) {
   try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch (_) { /* ignore */ }

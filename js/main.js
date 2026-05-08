@@ -1,7 +1,7 @@
 import { VERSION, CANVAS_W, CANVAS_H } from './config.js';
 import { createRenderer } from './renderer.js';
 import { buildWorld } from './world.js';
-import { Joystick } from './input.js';
+import { Joystick, Keyboard } from './input.js';
 import { Plane } from './plane.js';
 import { buildFokker, buildCockpit, buildAirfield, buildZeppelin as buildZepMesh, createSmokePool, emitSmoke, updateSmoke, createScorchPool, placeScorch, createFirePool, emitFire, updateFire } from './models.js';
 import { terrainHeight } from './world.js';
@@ -78,6 +78,7 @@ const gs = new GameState();
 
 // Joystick + input
 const joystick = new Joystick();
+const keyboard = new Keyboard();
 const octx = overlayCanvas.getContext('2d');
 overlayCanvas.style.pointerEvents = 'auto';
 function screenToCanvas(clientX, clientY) {
@@ -581,10 +582,16 @@ function loop(t) {
       plane.updateDying(dt);
     } else {
       const jv = joystick.value();
+      const kv = keyboard.value();
+      // Sum joystick + keyboard, clamp to [-1, 1] so combined input can't exceed full deflection.
+      let cx = jv.x + kv.x;
+      let cy = jv.y + kv.y;
+      if (cx > 1) cx = 1; else if (cx < -1) cx = -1;
+      if (cy > 1) cy = 1; else if (cy < -1) cy = -1;
       // Apply settings: invert Y + sensitivity.
       const sens = gs.settings.sensitivity || 1.0;
       const iy = gs.settings.invertY ? -1 : 1;
-      plane.update(dt, { x: jv.x * sens, y: jv.y * iy * sens });
+      plane.update(dt, { x: cx * sens, y: cy * iy * sens });
       plane.yaw += weather.update(dt);
     }
     syncCameraToPlane();
